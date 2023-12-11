@@ -1,0 +1,68 @@
+# Paths
+path_app: "/srv/storage/AppData"
+path_app_data: "{{ path_app }}/data"
+path_app_config: "{{ path_app }}/config"
+path_app_logs: "{{ path_app }}/logs"
+path_storage: "/srv/storage"
+path_user_home: "/home/{{ user_default }}"
+path_root_home: "/{{ user_root }}"
+
+# Files
+perms_dir_default: "775"
+perms_dir_private: "755"
+perms_file_default: "664"
+perms_file_private: "600"
+perms_script_private: "700"
+
+# User
+user_default: &user_default "{{ ansible_env.USER }}"
+group_default: *user_default
+user_default_id: &user_default_id 1000
+group_default_id: *user_default_id
+user_root: &user_root root
+group_root: *user_root
+
+# Misc
+domain: lpcha.im
+timezone: America/Sao_Paulo
+
+# Networking
+default_gateway: 10.0.0.1
+port_http: 80
+port_http_internal: 8010
+port_https: 443
+port_https_internal: 44310
+subnet_private_v4: 10.0.0.0/8
+subnet_private_v6: fe80::/10
+nfs_ip_server: 10.10.0.1
+nfs_share_default: /srv/storage
+remote_borg_url: ssh://u363745@u363745.your-storagebox.de:23
+
+# Cloudflare
+cloudflare_ips_v4:
+  - 173.245.48.0/20
+  - 103.21.244.0/22
+  - 103.22.200.0/22
+  - 103.31.4.0/22
+  - 141.101.64.0/18
+  - 108.162.192.0/18
+  - 190.93.240.0/20
+  - 188.114.96.0/20
+  - 197.234.240.0/22
+  - 198.41.128.0/17
+  - 162.158.0.0/15
+  - 104.16.0.0/13
+  - 104.24.0.0/14
+  - 172.64.0.0/13
+  - 131.0.72.0/22
+cloudflare_ips_v6:
+  - 2400:cb00::/32
+  - 2606:4700::/32
+  - 2803:f800::/32
+  - 2405:b500::/32
+  - 2405:8100::/32
+  - 2a06:98c0::/29
+  - 2c0f:f248::/32
+local_ips:
+  - "{{ subnet_private_v4 }}"
+  - "{{ subnet_private_v6 }}"

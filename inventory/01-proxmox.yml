@@ -1,0 +1,33 @@
+---
+
+plugin: community.general.proxmox
+url: https://10.10.0.1:8006
+user: ansible@pam
+token_id: ansible
+token_secret: !vault |
+  $ANSIBLE_VAULT;1.1;AES256
+  31623666306564366165653334383030303037306166393061666661306365623839346134333238
+  3331333764646336356166393731626165306664663663320a303438356562316231626239363061
+  31623436343566616365313838616535323730363733396462383330393736316430366164633533
+  6538363966363132380a366130333464346637343932663866346162623831633633303132613365
+  32386438303934353836353863613365313532316261316638643463376531393065643238633062
+  3634343261613636663334306636643339373630666463626337
+
+validate_certs: false
+qemu_extended_statuses: true
+want_facts: true
+want_proxmox_nodes_ansible_host: false
+compose:
+  ansible_host: proxmox_ipconfig0.ip | default(proxmox_net0.ip) | ansible.utils.ipaddr('address')
+  ansible_user: root
+# keyed_groups:
+#     # proxmox_tags_parsed is an example of a fact only returned when 'want_facts=true'
+#   - key: proxmox_tags_parsed
+#     separator: ""
+#     # prefix: group
+# groups:
+#   lxc: "proxmox_tags_parsed | list"
+
+cache: true
+cache_plugin: ansible.builtin.jsonfile
+cache_connection: .ansiblecache

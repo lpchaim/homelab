@@ -1,0 +1,9 @@
+---
+roles:
+  - name: caddy_ansible.caddy_ansible
+  - name: ironicbadger.proxmox_nag_removal
+  - name: ironicbadger.snapraid
+collections:
+  - name: ansible.posix
+  - name: ansible.utils
+  - name: community.general

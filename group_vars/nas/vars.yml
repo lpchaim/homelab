@@ -1,0 +1,199 @@
+# Paths
+path_app: "{{ path_user_home }}/Apps"
+path_app_data: "{{ path_app }}/Data"
+path_app_config: "{{ path_app }}/Config"
+path_app_logs: "{{ path_app }}/Logs"
+path_storage: "/mnt/storage"
+
+# Storage
+disks_data: []
+  # - name: "4TB HDD"
+  #   path: /mnt/data1
+  #   uuid: 97e94b6e-aa40-4dd1-a18b-a957db45b520
+  #   fstype: btrfs
+  # - name: "2TB HDD"
+  #   path: /mnt/data2
+  #   uuid: bbb9763d-076e-45f6-d3a9-08d2793ff7da
+  #   fstype: btrfs
+disks_parity: []
+  # - name:
+  #   path: /mnt/parity1
+  #   uuid:
+  #   fstype: btrfs
+
+# Containers
+common_args: &common_args
+  networks:
+    - name: internal
+common_env: &common_env
+  TZ: "{{ timezone }}"
+  PUID: "1000"
+  PGID: "100"
+containers:
+  # DB/Storage
+  - name: mariadb
+    name_friendly: MariaDB
+    image: lscr.io/linuxserver/mariadb:10.6.12
+    ports:
+      - 3306:3306
+    env:
+      <<: *common_env
+      MYSQL_ROOT_PASSWORD: "{{ secret_mariadb_root_password }}"
+    volumes:
+      - "{{ path_app_config }}/MariaDB:/config"
+    dirs:
+      - "{{ path_app_config }}/MariaDB"
+    <<: *common_args
+  - name: redis
+    name_friendly: Redis
+    image: redis:6.2.11-alpine3.17
+    ports:
+      - 6379:6379
+    env:
+      <<: *common_env
+      MYSQL_ROOT_PASSWORD: "{{ secret_mariadb_root_password }}"
+    # command: redis-server /usr/local/etc/redis/redis.conf
+    volumes:
+      - "{{ path_app_config }}/Redis/redis.conf:/usr/local/etc/redis/redis.conf"
+    dirs:
+      - "{{ path_app_config }}/Redis"
+    templates:
+      - src: ../common/templates/redis/redis.conf.j2
+        dest: "{{ path_app_config }}/Redis/redis.conf"
+    <<: *common_args
+  # Proxying
+  - name: traefik
+    name_friendly: Traefik
+    image: traefik:v2.9
+    ports:
+      - "80:80"
+      - "8080:8080"
+      - "443:443"
+    env:
+      CF_DNS_API_TOKEN: "{{ secret_cloudflare_api_token }}"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /etc/localtime:/etc/localtime:ro
+      - "{{ path_app_config }}/Traefik:/etc/traefik"
+      - "{{ path_app_config }}/Traefik/acme:/etc/traefik/acme"
+    dirs:
+      - "{{ path_app_config }}/Traefik"
+    templates:
+      - src: ../common/templates/traefik/dynamic.yml.j2
+        dest: "{{ path_app_config }}/Traefik/dynamic.yml"
+      - src: ../common/templates/traefik/traefik.yml.j2
+        dest: "{{ path_app_config }}/Traefik/traefik.yml"
+    networks:
+      - name: external
+  # Arr suite
+  - name: sonarr
+    name_friendly: Sonarr
+    image: lscr.io/linuxserver/sonarr
+    ports:
+      - "8989:8989"
+    env:
+      <<: *common_env
+    volumes:
+      - "{{ path_app_config }}/Sonarr:/config"
+      - "{{ path_storage }}:/storage"
+      - /dev/rtc:/dev/rtc
+    dirs:
+      - "{{ path_app_config }}/Sonarr"
+    <<: *common_args
+  - name: radarr
+    name_friendly: Radarr
+    image: lscr.io/linuxserver/radarr
+    ports:
+      - "7878:7878"
+    env:
+      <<: *common_env
+    volumes:
+      - "{{ path_app_config }}/Radarr:/config"
+      - "{{ path_storage }}:/storage"
+    dirs:
+      - "{{ path_app_config }}/Radarr:/config"
+    <<: *common_args
+  - name: bazarr
+    name_friendly: Bazarr
+    image: lscr.io/linuxserver/bazarr
+    ports:
+      - "6767:6767"
+    env:
+      <<: *common_env
+    volumes:
+      - "{{ path_app_config }}/Bazarr:/config"
+      - "{{ path_storage }}:/storage"
+    dirs:
+      - "{{ path_app_config }}/Bazarr"
+    <<: *common_args
+  - name: jackett
+    name_friendly: Jackett
+    image: lscr.io/linuxserver/jackett
+    ports:
+      - "9117:9117"
+    env:
+      <<: *common_env
+    volumes:
+      - "{{ path_app_config }}/Jackett:/config"
+      - "{{ path_storage }}:/storage"
+    dirs:
+      - "{{ path_app_config }}/Jackett"
+    <<: *common_args
+  - name: jellyseerr
+    name_friendly: Jellyseerr
+    image: fallenbagel/jellyseerr
+    ports:
+      - "5055:5055"
+    env:
+      <<: *common_env
+      LOG_LEVEL: warn
+    volumes:
+      - "{{ path_app_config }}/Jellyseerr:/app/config"
+    dirs:
+      - "{{ path_app_config }}/Jellyseerr"
+    <<: *common_args
+  # Misc
+  - name: heimdall
+    name_friendly: Heimdall
+    image: lscr.io/linuxserver/heimdall
+    ports:
+      - "8002:80"
+      - "4432:443"
+    env:
+      <<: *common_env
+    volumes:
+      - "{{ path_app_config }}/Heimdall:/config"
+    dirs:
+      - "{{ path_app_config }}/Heimdall"
+    <<: *common_args
+  - name: vscode
+    name_friendly: Visual Studio Code
+    image: lscr.io/linuxserver/code-server
+    ports:
+      - "8443:8443"
+    env:
+      <<: *common_env
+      PASSWORD: "{{ secret_vscode_password }}"
+      PROXY_DOMAIN: "code.{{ domain }}"
+    volumes:
+      - "{{ path_app_config }}/Visual Studio Code:/config"
+    dirs:
+      - "{{ path_app_config }}/Visual Studio Code"
+    <<: *common_args
+  # Management
+  - name: yacht
+    name_friendly: Yacht
+    image: selfhostedpro/yacht
+    ports:
+      - "8000:8000"
+    env:
+      <<: *common_env
+      # DOCKER_HOST: unix:$XDG_RUNTIME_DIR/podman/podman.sock
+    volumes:
+      - "{{ path_app_config }}/Yacht:/config"
+      - /var/run/podman/podman.sock:/var/run/docker.sock
+    dirs:
+      - "{{ path_app_config }}/Yacht"
+    needs_root: true
+    auto_update: false
+    <<: *common_args

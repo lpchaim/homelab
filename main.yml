@@ -1,0 +1,94 @@
+---
+
+- name: Gather custom facts
+  hosts:
+    - proxmox_nodes
+    - docker
+  roles:
+    - role: custom-facts
+
+- name: Setup Proxmox nodes
+  hosts:
+    - proxmox_nodes
+  roles:
+    - role: avahi-daemon
+    - name: Remove Proxmox nag
+      role: ironicbadger.proxmox_nag_removal
+    - name: Tunnel IPv6 to IPv4
+      role: ipv6-to-ipv4-tunnel
+      tags:
+        - networking
+    # - role: environment # @TODO Refactor into home-manager role
+    #   tags:
+    #     - environment
+
+- name: Setup Proxmox node pve01
+  hosts:
+    - pve01
+  roles:
+    - role: storage
+      tags:
+        - storage
+    - role: snapraid
+      tags:
+        - snapraid
+    - role: borg
+      tags:
+        - backup
+
+- name: Replicate local SSH key to all running Proxmox nodes, LXCs and VMs
+  hosts:
+    - proxmox_nodes
+  tags:
+    - ssh
+    - replicate
+  roles:
+    - proxmox-replicate-ssh-key
+
+- name: Setup Proxmox VMs and LXCs
+  hosts:
+    - proxmox_all_running:!proxmox_nodes
+  roles:
+    - name: avahi-daemon
+
+- name: Docker
+  hosts: docker
+  tags:
+    - docker
+  # tasks:
+  #   - name: Install NFS client
+  #     tags: storage
+  #     ansible.builtin.package:
+  #       name: nfs-common
+  #       state: present
+  #   - name: Create mount point
+  #     tags: storage
+  #     ansible.builtin.file:
+  #       path: "{{ path_storage }}"
+  #       mode: "{{ perms_dir_default }}"
+  #       owner: "{{ user_root }}"
+  #       group: "{{ group_root }}"
+  #       state: directory
+  #   - name: Setup NFS mount
+  #     tags: storage
+  #     ansible.builtin.mount:
+  #       fstype: nfs
+  #       src: "{{ nfs_ip_server }}:{{ nfs_share_default }}"
+  #       path: "{{ path_storage }}"
+  #       opts: rw,sync
+  #       state: mounted
+  #       boot: true
+  roles:
+    - role: ipv6-to-ipv4-tunnel
+      tags:
+        - networking
+    - role: docker
+      tags:
+        - containers
+
+- name: Caddy
+  hosts: caddy
+  tags:
+    - caddy
+  roles:
+    - role: caddy

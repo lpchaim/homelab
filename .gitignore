@@ -1,0 +1,5 @@
+.ansiblecache
+.envrc
+.direnv
+.vault-password
+.venv

@@ -1,0 +1,25 @@
+disks_data:
+  - name: "4TB WD HDD"
+    path: /srv/data1
+    uuid: 836a4e67-2f70-4fcf-a717-78c37fb9345d
+    fstype: ext4
+    opts: &ext4opts defaults,noatime
+  - name: "2TB Seagate HDD"
+    path: /srv/data2
+    uuid: b56b75c1-b20e-4d1d-a45d-8f947bfd81c1
+    fstype: ext4
+    opts: *ext4opts
+  - name: "4TB Ironwolf HDD #1"
+    path: /srv/data3
+    uuid: 8b3ee16a-7fa6-428f-bbd4-6c04fd29ac2f
+    fstype: ext4
+    opts: *ext4opts
+disks_parity:
+  - name: "4TB Ironwolf HDD #2"
+    path: /srv/parity1
+    uuid: 55523436-1cdc-4a5e-9d56-3cf866aa9c29
+    fstype: ext4
+    opts: *ext4opts
+proxmox_node_name: proxmox1
+proxmox_node_host: "10.10.0.1"
+proxmox_node_url: "{{ proxmox_node_host }}:8006"

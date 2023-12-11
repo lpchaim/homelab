@@ -1,0 +1,13 @@
+---
+
+proxmox:
+  vars:
+    ansible_user: root
+  children:
+    proxmox_all_lxc:
+    proxmox_all_qemu:
+    proxmox_all_running:
+    proxmox_all_stopped:
+    proxmox_all_prelaunch:
+    proxmox_all_paused:
+    proxmox_nodes:
