@@ -26,7 +26,10 @@
         makeNixosConfig = modules:
           nixpkgs.lib.nixosSystem {
             inherit system;
-            modules = [ nixos-generators.nixosModules.proxmox-lxc ] ++ modules;
+            modules = [
+              nixos-generators.nixosModules.proxmox-lxc
+              ./modules/proxmox-lxc-base.nix
+            ] ++ modules;
           };
         makeProxmoxLxc = modules:
           nixos-generators.nixosGenerate {
