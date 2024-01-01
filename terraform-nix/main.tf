@@ -27,19 +27,31 @@ provider "proxmox" {
   }
 }
 
-resource "proxmox_lxc" "nixos-caddy" {
-  vmid   = "241"
-  tags   = "nixos,caddy"
-  memory = var.default_mem
-  cores  = 4
+locals {
+  lxcs = [
+    for lxc in var.lxcs : merge(lxc, {
+      flake = coalesce(lxc.flake, lxc.name)
+    }) if lxc.enable
+  ]
+}
 
-  hostname = "nixos-caddy"
+resource "proxmox_lxc" "nixos_lxc" {
+  count = length(local.lxcs)
+
+  vmid   = local.lxcs[count.index].vmid
+  tags   = join(";", sort(concat([ "nixos", "terraform" ], local.lxcs[count.index].tags)))
+
+  cores  = local.lxcs[count.index].cores
+  memory = local.lxcs[count.index].memory
+  swap = local.lxcs[count.index].swap
+
+  hostname = "nixos-${local.lxcs[count.index].name}"
   network {
     name   = "eth0"
-    bridge  = "vmbr0"
-    ip      = "10.10.2.41/${var.network_subnet}"
-    ip6     = "dhcp"
-    gw = var.network_gateway
+    bridge = "vmbr0"
+    ip     = "${local.lxcs[count.index].ip}/${var.network_subnet}"
+    ip6    = "dhcp"
+    gw     = var.network_gateway
   }
 
   target_node     = var.pm_node_name
@@ -59,20 +71,20 @@ resource "proxmox_lxc" "nixos-caddy" {
 }
 
 module "nixos" {
+  count  = length(local.lxcs)
   source = "github.com/Gabriella439/terraform-nixos-ng/nixos"
 
-  host = "root@10.10.2.41"
-
-  flake = ".#caddy"
+  host  = "${local.lxcs[count.index].user}@${local.lxcs[count.index].ip}"
+  flake = ".#${local.lxcs[count.index].flake}"
 
   arguments = [
     # You can build on another machine, including the target machine, by
     # enabling this option, but if you build on the target machine then make
     # sure that the firewall and security group permit outbound connections.
-    # "--build-host", "root@${var.caddy_ip}",
+    "--build-host", "${local.lxcs[count.index].user}@${local.lxcs[count.index].ip}",
   ]
 
-  ssh_options = "-o StrictHostKeyChecking=accept-new"
+  ssh_options = "-o StrictHostKeyChecking=no"
 
-  depends_on = [proxmox_lxc.nixos-caddy]
+  depends_on = [proxmox_lxc.nixos_lxc]
 }

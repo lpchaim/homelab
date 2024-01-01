@@ -35,7 +35,18 @@ variable "authorized_keys" {
   type        = string
 }
 
-variable "default_mem" {
-  description = "Number of server nodes to provision"
-  type        = string
+variable "lxcs" {
+  description = "List of maps describing LXC containers"
+  type = list(object({
+    name   = string
+    vmid   = number
+    ip     = string
+    enable = optional(bool, true)
+    user   = optional(string, "root")
+    flake  = optional(string, null)
+    tags   = optional(list(string), [])
+    memory = optional(number, 1024)
+    swap   = optional(number, 0)
+    cores  = optional(number, 6)
+  }))
 }

@@ -9,4 +9,10 @@ network_subnet  = "8"
 authorized_keys = <<SSH
 SSH
 
-default_mem = 1024
+lxcs = [
+  {
+    name = "caddy"
+    vmid = "241"
+    ip   = "10.10.2.41"
+  }
+]
