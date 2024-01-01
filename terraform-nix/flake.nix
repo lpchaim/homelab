@@ -23,37 +23,37 @@
           };
         pkgs = makePkgs nixpkgs;
         pkgsUnstable = makePkgs nixpkgs-unstable;
-        makeNixosConfig = modules:
+        commonModules = [ { system.stateVersion = "23.05"; } ];
+        makeProxmoxLxcConfig = modules:
           nixpkgs.lib.nixosSystem {
             inherit system;
-            modules = [
-              nixos-generators.nixosModules.proxmox-lxc
+            modules = commonModules ++ modules ++ [
               ./modules/proxmox-lxc-base.nix
-            ] ++ modules;
+              nixos-generators.nixosModules.proxmox-lxc
+            ];
+            specialArgs = { inherit inputs pkgs system; };
           };
-        makeProxmoxLxc = modules:
+        makeProxmoxLxcTarball = modules:
           nixos-generators.nixosGenerate {
-            inherit system modules;
+            inherit system;
+            modules = commonModules ++ modules;
             format = "proxmox-lxc";
             pkgs = nixpkgs.legacyPackages.${system};
             lib = nixpkgs.legacyPackages.${system}.lib;
             specialArgs = { inherit inputs pkgs system; };
           };
-      in {
-        legacyPackages.nixosConfigurations =
-          let
-            servicesPath = ./services;
-            services = builtins.readDir servicesPath;
-          in
+        servicesPath = ./services;
+        services = builtins.readDir servicesPath;
+        makeAttrsetFromServices = action:
           pkgs.lib.mapAttrs'
-            (file: _: pkgs.lib.nameValuePair
-              (pkgs.lib.removeSuffix ".nix" file)
-              (makeNixosConfig [ "${servicesPath}/${file}" ]))
+            (file: _: pkgs.lib.nameValuePair (pkgs.lib.removeSuffix ".nix" file) (action "${servicesPath}/${file}"))
             services;
+      in {
+        legacyPackages.nixosConfigurations = makeAttrsetFromServices (path: makeProxmoxLxcConfig [ path ]);
         packages = rec {
           default = base-proxmox-lxc;
-          base-proxmox-lxc = makeProxmoxLxc [];
-        };
+          base-proxmox-lxc = makeProxmoxLxcTarball [];
+        } // makeAttrsetFromServices (path: makeProxmoxLxcTarball [ path ]);
         devShells.default =
           with pkgsUnstable;
           mkShell {
@@ -61,7 +61,7 @@
               (terraform.withPlugins (b: with b; [
                 external
                 local
-                b.null
+                null
                 proxmox
               ]))
             ];
