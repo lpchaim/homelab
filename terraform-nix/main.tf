@@ -31,9 +31,6 @@ locals {
   lxcs = [
     for lxc in var.lxcs : merge(lxc, {
       flake = coalesce(lxc.flake, lxc.name)
-      mountpoints = [for mp in lxc.mountpoints : merge(mp, {
-        volume = coalesce(mp.volume, tostring(mp.storage))
-      })]
     }) if lxc.enable
   ]
 }
@@ -88,7 +85,6 @@ resource "proxmox_lxc" "nixos" {
   lifecycle {
     ignore_changes = [
       rootfs,
-      mountpoint["storage"],
     ]
   }
 

@@ -24,13 +24,13 @@
       "lxc.mount.entry: /dev/dri/renderD128 dev/dri/renderD128 none bind,optional,create=file"
     ];
     mountpoints = [
-      { mp = "/data"; storage = "/srv/storage"; }
-      { mp = "/config"; storage = "/srv/storage/AppData/config/jellyfin"; }
-      { mp = "/var/lib/jellyfin/data"; storage = "/srv/storage/AppData/config/jellyfin/data/data"; }
-      { mp = "/var/lib/jellyfin/metadata"; storage = "/srv/storage/AppData/config/jellyfin/data/metadata"; }
-      { mp = "/var/lib/jellyfin/plugins"; storage = "/srv/storage/AppData/config/jellyfin/data/plugins"; }
-      { mp = "/var/lib/jellyfin/root"; storage = "/srv/storage/AppData/config/jellyfin/data/root"; }
-      { mp = "/var/cache/jellyfin"; storage = "/srv/storage/AppData/config/jellyfin/cache"; }
+      { mp = "/data"; volume = "/srv/storage"; }
+      { mp = "/config"; volume = "/srv/storage/AppData/config/jellyfin"; }
+      { mp = "/var/lib/jellyfin/data"; volume = "/srv/storage/AppData/config/jellyfin/data/data"; }
+      { mp = "/var/lib/jellyfin/metadata"; volume = "/srv/storage/AppData/config/jellyfin/data/metadata"; }
+      { mp = "/var/lib/jellyfin/plugins"; volume = "/srv/storage/AppData/config/jellyfin/data/plugins"; }
+      { mp = "/var/lib/jellyfin/root"; volume = "/srv/storage/AppData/config/jellyfin/data/root"; }
+      { mp = "/var/cache/jellyfin"; volume = "/srv/storage/AppData/config/jellyfin/cache"; }
     ];
   }
 ]

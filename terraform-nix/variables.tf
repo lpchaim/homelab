@@ -59,10 +59,10 @@ variable "lxcs" {
     cores       = optional(number, 6)
     mountpoints = optional(list(object({
       mp      = string
-      storage = string
+      volume  = string
       slot    = optional(number)
       key     = optional(string, "")
-      volume  = optional(string)
+      storage = optional(string, "")
       size    = optional(string, "0T")
     })), [])
     extra_config = optional(list(string), [])
