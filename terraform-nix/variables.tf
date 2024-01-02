@@ -9,6 +9,12 @@ variable "pm_host" {
   type        = string
 }
 
+variable "pm_user" {
+  description = "PVE node user"
+  type        = string
+  default     = "root"
+}
+
 variable "pm_node_name" {
   description = "Name of the proxmox node to create the VMs on"
   type        = string
@@ -38,15 +44,27 @@ variable "authorized_keys" {
 variable "lxcs" {
   description = "List of maps describing LXC containers"
   type = list(object({
-    name   = string
-    vmid   = number
-    ip     = string
-    enable = optional(bool, true)
-    user   = optional(string, "root")
-    flake  = optional(string, null)
-    tags   = optional(list(string), [])
-    memory = optional(number, 1024)
-    swap   = optional(number, 0)
-    cores  = optional(number, 6)
+    name        = string
+    vmid        = number
+    ip          = string
+    enable      = optional(bool, true)
+    onboot      = optional(bool, true)
+    rootfs_size = optional(string, "8G")
+    privileged  = optional(bool, false)
+    user        = optional(string, "root")
+    flake       = optional(string, null)
+    tags        = optional(list(string), [])
+    memory      = optional(number, 1024)
+    swap        = optional(number, 0)
+    cores       = optional(number, 6)
+    mountpoints = optional(list(object({
+      slot    = number
+      mp      = string
+      storage = string
+      key     = optional(string, "")
+      volume  = optional(string)
+      size    = optional(string, "0T")
+    })), [])
+    extra_config = optional(list(string), [])
   }))
 }

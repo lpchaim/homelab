@@ -31,25 +31,47 @@ locals {
   lxcs = [
     for lxc in var.lxcs : merge(lxc, {
       flake = coalesce(lxc.flake, lxc.name)
+      mountpoints = [for mp in lxc.mountpoints : merge(mp, {
+        volume = coalesce(mp.volume, tostring(mp.storage))
+      })]
     }) if lxc.enable
   ]
 }
 
-resource "proxmox_lxc" "nixos_lxc" {
-  count = length(local.lxcs)
+resource "proxmox_lxc" "nixos" {
+  for_each = { for key, val in local.lxcs : key => val }
 
-  vmid   = local.lxcs[count.index].vmid
-  tags   = join(";", sort(concat([ "nixos", "terraform" ], local.lxcs[count.index].tags)))
+  vmid         = each.value.vmid
+  tags         = join(";", sort(concat(["nixos", "terraform"], each.value.tags)))
+  start        = true
+  onboot       = each.value.onboot
+  unprivileged = !each.value.privileged
 
-  cores  = local.lxcs[count.index].cores
-  memory = local.lxcs[count.index].memory
-  swap = local.lxcs[count.index].swap
+  cores  = each.value.cores
+  memory = each.value.memory
+  swap   = each.value.swap
 
-  hostname = "nixos-${local.lxcs[count.index].name}"
+  rootfs {
+    storage = "local-lvm"
+    size    = each.value.rootfs_size
+  }
+  dynamic "mountpoint" {
+    for_each = each.value.mountpoints
+    content {
+      slot    = mountpoint.value["slot"]
+      mp      = mountpoint.value["mp"]
+      storage = mountpoint.value["storage"]
+      volume  = mountpoint.value["volume"]
+      key     = mountpoint.value["key"]
+      size    = mountpoint.value["size"]
+    }
+  }
+
+  hostname = each.value.name
   network {
     name   = "eth0"
     bridge = "vmbr0"
-    ip     = "${local.lxcs[count.index].ip}/${var.network_subnet}"
+    ip     = "${each.value.ip}/${var.network_subnet}"
     ip6    = "dhcp"
     gw     = var.network_gateway
   }
@@ -57,34 +79,52 @@ resource "proxmox_lxc" "nixos_lxc" {
   target_node     = var.pm_node_name
   ostemplate      = var.pm_lxc_template
   ssh_public_keys = var.authorized_keys
-  start           = true
   cmode           = "console"
 
   features {
     nesting = true
   }
+
   lifecycle {
     ignore_changes = [
       rootfs
     ]
   }
+
+  connection {
+    type        = "ssh"
+    user        = var.pm_user
+    host        = var.pm_host
+    private_key = file("~/.ssh/id_rsa")
+  }
+
+  provisioner "remote-exec" {
+    inline = length(each.value.extra_config) > 0 ? concat(
+      [for line in each.value.extra_config : "echo '${line}' >> /etc/pve/lxc/${each.value.vmid}.conf"],
+      [
+        "awk -i inplace '!a[$0]++' /etc/pve/lxc/${each.value.vmid}.conf", # Removes duplicate lines, just in case
+        "sleep 2 && pct reboot ${each.value.vmid}"
+      ]
+    ) : []
+  }
 }
 
 module "nixos" {
-  count  = length(local.lxcs)
+  for_each = { for key, val in local.lxcs : key => val }
+
   source = "github.com/Gabriella439/terraform-nixos-ng/nixos"
 
-  host  = "${local.lxcs[count.index].user}@${local.lxcs[count.index].ip}"
-  flake = ".#${local.lxcs[count.index].flake}"
+  host  = "${each.value.user}@${each.value.ip}"
+  flake = ".#${each.value.flake}"
 
   arguments = [
     # You can build on another machine, including the target machine, by
     # enabling this option, but if you build on the target machine then make
     # sure that the firewall and security group permit outbound connections.
-    "--build-host", "${local.lxcs[count.index].user}@${local.lxcs[count.index].ip}",
+    "--build-host", "${each.value.user}@${each.value.ip}",
   ]
 
   ssh_options = "-o StrictHostKeyChecking=no"
 
-  depends_on = [proxmox_lxc.nixos_lxc]
+  depends_on = [proxmox_lxc.nixos]
 }
