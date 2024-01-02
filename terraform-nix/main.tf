@@ -87,7 +87,8 @@ resource "proxmox_lxc" "nixos" {
 
   lifecycle {
     ignore_changes = [
-      rootfs
+      rootfs,
+      mountpoint["storage"],
     ]
   }
 
