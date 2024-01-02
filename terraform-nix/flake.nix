@@ -48,30 +48,24 @@
       in
       with pkgs.lib;
       {
-        apps =
-          let
-            makeDefaultTerraformCmd = cmd: {
-              type = "app";
-              program = toString (pkgs.writers.writeBash cmd ''
-                ${self.apps.${system}.generateTerraformVars.program}
-                ${pkgs.terraform}/bin/terraform ${cmd}
+        apps = {
+          default = self.apps.${system}.apply;
+          generateTerraformVars = {
+            type = "app";
+            program =
+              let tfVarsFile = "nix.auto.tfvars.json";
+              in toString (pkgs.writers.writeBash "generateTerraformVars" ''
+                if [[ -e ${tfVarsFile} ]]; then rm -f ${tfVarsFile}; fi
+                cp ${self.packages.${system}.terraform-vars} ${tfVarsFile}
               '');
-            };
-          in
-          {
-            default = self.apps.${system}.apply;
-            generateTerraformVars = {
-              type = "app";
-              program =
-                let
-                  tfVarsFile = "nix.auto.tfvars.json";
-                in
-                toString (pkgs.writers.writeBash "generateTerraformVars" ''
-                  if [[ -e ${tfVarsFile} ]]; then rm -f ${tfVarsFile}; fi
-                  cp ${self.packages.${system}.terraform-vars} ${tfVarsFile}
-                '');
-            };
-          } // genAttrs [ "init" "plan" "apply" "destroy" ] makeDefaultTerraformCmd;
+          };
+        } // genAttrs [ "init" "plan" "apply" "destroy" ] (cmd: {
+          type = "app";
+          program = toString (pkgs.writers.writeBash cmd ''
+            ${self.apps.${system}.generateTerraformVars.program}
+            ${pkgs.terraform}/bin/terraform ${cmd}
+          '');
+        });
 
         legacyPackages.nixosConfigurations = genAttrs services (name: makeProxmoxLxcConfig [{ config.my.services.${name}.enable = true; }]);
         packages = rec {
