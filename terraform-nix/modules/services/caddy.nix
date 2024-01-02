@@ -2,7 +2,7 @@
 
 {
   services.caddy = {
-    enable = true;
+      enable = true;
     virtualHosts."localhost".extraConfig = ''
       respond "Hello, world!"
     '';
