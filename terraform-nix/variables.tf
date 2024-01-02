@@ -58,9 +58,9 @@ variable "lxcs" {
     swap        = optional(number, 0)
     cores       = optional(number, 6)
     mountpoints = optional(list(object({
-      slot    = number
       mp      = string
       storage = string
+      slot    = optional(number)
       key     = optional(string, "")
       volume  = optional(string)
       size    = optional(string, "0T")

@@ -58,7 +58,7 @@ resource "proxmox_lxc" "nixos" {
   dynamic "mountpoint" {
     for_each = each.value.mountpoints
     content {
-      slot    = mountpoint.value["slot"]
+      slot    = coalesce(mountpoint.value["slot"], mountpoint.key)
       mp      = mountpoint.value["mp"]
       storage = mountpoint.value["storage"]
       volume  = mountpoint.value["volume"]
