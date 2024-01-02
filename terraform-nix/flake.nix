@@ -86,21 +86,18 @@
             '';
         } // genAttrs services (name: makeProxmoxLxcTarball [{ config.my.services.${name}.enable = true; }]);
 
-        devShells.default =
-          with pkgsUnstable;
-          mkShell {
-            buildInputs = [
-              (terraform.withPlugins (b: with b; [
-                external
-                local
-                null
-                proxmox
-              ]))
-              rnix-lsp
-              nixfmt
-              nixpkgs-fmt
-            ];
-          };
+        devShells.default = with pkgs; mkShell {
+          buildInputs = [
+            (terraform.withPlugins (b: with b; [
+              external
+              local
+              null
+              proxmox
+            ]))
+            nixd
+            nixpkgs-fmt
+          ];
+        };
       }
     );
 }

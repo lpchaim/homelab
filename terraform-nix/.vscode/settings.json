@@ -1,6 +1,6 @@
 {
 	"nix.enableLanguageServer": true,
-	"nix.serverPath": "rnix-lsp",
+	"nix.serverPath": "nixd",
 	"nix.formatterPath": "nixpkgs-fmt",
 	"[nix]": {
 		"editor.insertSpaces": true,
