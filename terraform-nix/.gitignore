@@ -1,5 +1,6 @@
 .terraform
 logs/*
+nix.auto.tfvars.json
 result
 terraform.tfvars
 !.gitkeep
