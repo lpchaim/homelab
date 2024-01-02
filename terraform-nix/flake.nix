@@ -23,25 +23,26 @@
           };
         pkgs = makePkgs nixpkgs;
         pkgsUnstable = makePkgs nixpkgs-unstable;
-        commonModules = [ { system.stateVersion = "23.11"; } ];
-        makeProxmoxLxcConfig = modules:
-          nixpkgs.lib.nixosSystem {
+
+        makeCommonConfig = modules: {
             inherit system;
-            modules = commonModules ++ modules ++ [
-              ./modules/proxmox-lxc-base.nix
-              nixos-generators.nixosModules.proxmox-lxc
-            ];
+            modules = [ { system.stateVersion = "23.11"; } ] ++ modules;
             specialArgs = { inherit inputs pkgs system; };
-          };
+        };
+        makeProxmoxLxcConfig = modules:
+          nixpkgs.lib.nixosSystem (
+            makeCommonConfig (modules ++ [
+              ./modules/platforms/proxmox-lxc
+              nixos-generators.nixosModules.proxmox-lxc
+            ])
+          );
         makeProxmoxLxcTarball = modules:
-          nixos-generators.nixosGenerate {
-            inherit system;
-            modules = commonModules ++ modules;
+          nixos-generators.nixosGenerate (makeCommonConfig modules // {
             format = "proxmox-lxc";
             pkgs = nixpkgs.legacyPackages.${system};
             lib = nixpkgs.legacyPackages.${system}.lib;
-            specialArgs = { inherit inputs pkgs system; };
-          };
+          });
+
         servicesPath = ./services;
         services = builtins.readDir servicesPath;
         makeAttrsetFromServices = action:
