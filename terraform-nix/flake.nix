@@ -26,13 +26,13 @@
 
         makeCommonConfig = modules: {
           inherit system;
-          modules = [{ system.stateVersion = "23.11"; }] ++ modules;
+          modules = [{ system.stateVersion = "23.11"; } ./modules] ++ modules;
           specialArgs = { inherit inputs pkgs system; };
         };
         makeProxmoxLxcConfig = modules:
           nixpkgs.lib.nixosSystem (
             makeCommonConfig (modules ++ [
-              ./modules/platforms/proxmox-lxc
+              { my.platforms.proxmox-lxc.enable = true; }
               nixos-generators.nixosModules.proxmox-lxc
             ])
           );
@@ -43,13 +43,10 @@
             lib = nixpkgs.legacyPackages.${system}.lib;
           });
 
-        servicesPath = ./services;
-        services = builtins.readDir servicesPath;
-        makeAttrsetFromServices = action:
-          pkgs.lib.mapAttrs'
-            (file: _: pkgs.lib.nameValuePair (pkgs.lib.removeSuffix ".nix" file) (action "${servicesPath}/${file}"))
-            services;
+        serviceFiles = builtins.removeAttrs (builtins.readDir ./modules/services) [ "default.nix" ];
+        services = builtins.map (name: pkgs.lib.removeSuffix ".nix" name) (builtins.attrNames serviceFiles);
       in
+      with pkgs.lib;
       {
         apps =
           let
@@ -61,11 +58,8 @@
               '');
             };
           in
-          rec {
-            default = apply;
-            init = makeDefaultTerraformCmd "init";
-            apply = makeDefaultTerraformCmd "apply";
-            destroy = makeDefaultTerraformCmd "destroy";
+          {
+            default = self.apps.${system}.apply;
             generateTerraformVars = {
               type = "app";
               program =
@@ -77,9 +71,9 @@
                   cp ${self.packages.${system}.terraform-vars} ${tfVarsFile}
                 '');
             };
-          };
+          } // genAttrs [ "init" "plan" "apply" "destroy" ] makeDefaultTerraformCmd;
 
-        legacyPackages.nixosConfigurations = makeAttrsetFromServices (path: makeProxmoxLxcConfig [ path ]);
+        legacyPackages.nixosConfigurations = genAttrs services (name: makeProxmoxLxcConfig [{ config.my.services.${name}.enable = true; }]);
         packages = rec {
           default = base-proxmox-lxc;
           base-proxmox-lxc = makeProxmoxLxcTarball [ ];
@@ -90,7 +84,7 @@
             pkgs.runCommand "terraform-vars" { } ''
               echo '${builtins.toJSON tfVars}' | ${pkgs.jq}/bin/jq > $out
             '';
-        } // makeAttrsetFromServices (path: makeProxmoxLxcTarball [ path ]);
+        } // genAttrs services (name: makeProxmoxLxcTarball [{ config.my.services.${name}.enable = true; }]);
 
         devShells.default =
           with pkgsUnstable;

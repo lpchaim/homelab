@@ -2,4 +2,8 @@
 	"nix.enableLanguageServer": true,
 	"nix.serverPath": "rnix-lsp",
 	"nix.formatterPath": "nixpkgs-fmt",
+	"[nix]": {
+		"editor.insertSpaces": true,
+		"editor.tabSize": 2
+	}
 }
