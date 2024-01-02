@@ -1,6 +1,6 @@
 {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/23.05";
+    nixpkgs.url = "github:NixOS/nixpkgs/23.11";
     nixpkgs-unstable.url = "nixpkgs/nixos-unstable";
 
     flake-utils.url = "github:numtide/flake-utils";
@@ -23,7 +23,7 @@
           };
         pkgs = makePkgs nixpkgs;
         pkgsUnstable = makePkgs nixpkgs-unstable;
-        commonModules = [ { system.stateVersion = "23.05"; } ];
+        commonModules = [ { system.stateVersion = "23.11"; } ];
         makeProxmoxLxcConfig = modules:
           nixpkgs.lib.nixosSystem {
             inherit system;
