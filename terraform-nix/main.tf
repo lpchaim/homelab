@@ -107,7 +107,7 @@ resource "proxmox_lxc" "nixos" {
 }
 
 module "nixos" {
-  for_each = { for key, val in local.lxcs : key => val }
+  for_each = { for key, val in local.lxcs : key => val if var.build }
 
   source = "github.com/Gabriella439/terraform-nixos-ng/nixos"
 

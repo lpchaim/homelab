@@ -68,3 +68,9 @@ variable "lxcs" {
     extra_config = optional(list(string), [])
   }))
 }
+
+variable "build" {
+  description = "Whether to build the NixOS configurations"
+  type = bool
+  default = false
+}

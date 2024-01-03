@@ -8,11 +8,14 @@
       url = "github:nix-community/nixos-generators";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    sops-nix.url = "github:Mic92/sops-nix";
   };
 
-  outputs = { self, flake-utils, nixpkgs, nixpkgs-unstable, nixos-generators, ... }@inputs:
+  outputs = { self, flake-utils, nixpkgs, nixpkgs-unstable, nixos-generators, sops-nix, ... }@inputs:
     flake-utils.lib.eachDefaultSystem (system:
       let
+        my.config = import ./config.nix;
+
         makePkgs = nixpkgs:
           import nixpkgs {
             inherit system;
@@ -26,8 +29,8 @@
 
         makeCommonConfig = modules: {
           inherit system;
-          modules = [{ system.stateVersion = "23.11"; } ./modules] ++ modules;
-          specialArgs = { inherit inputs pkgs system; };
+          modules = [{ system.stateVersion = "23.11"; } ./modules sops-nix.nixosModules.sops] ++ modules;
+          specialArgs = { inherit inputs my pkgs system; };
         };
         makeProxmoxLxcConfig = modules:
           nixpkgs.lib.nixosSystem (
@@ -48,50 +51,68 @@
       in
       with pkgs.lib;
       {
-        apps = {
-          default = self.apps.${system}.apply;
-          generateTerraformVars = {
-            type = "app";
-            program =
-              let tfVarsFile = "nix.auto.tfvars.json";
-              in toString (pkgs.writers.writeBash "generateTerraformVars" ''
-                if [[ -e ${tfVarsFile} ]]; then rm -f ${tfVarsFile}; fi
-                cp ${self.packages.${system}.terraform-vars} ${tfVarsFile}
+        apps =
+          let
+            makeTfVarsPackage = tfVars: pkgs.runCommand "terraform-vars" { } ''
+                echo '${builtins.toJSON tfVars}' | ${pkgs.jq}/bin/jq > $out
+              '';
+            makeGenerateTfVars = name: package:
+              let tfVarsFile = "${name}.auto.tfvars.json";
+              in {
+                type = "app";
+                program = toString (pkgs.writers.writeBash "package-${package.name}" ''
+                  if [[ -e ${tfVarsFile} ]]; then rm -f ${tfVarsFile}; fi
+                  cp ${package} ${tfVarsFile}
+                '');
+              };
+            enableBuild = makeGenerateTfVars "nix-build" (makeTfVarsPackage { build = true; });
+            disableBuild = makeGenerateTfVars "nix-build" (makeTfVarsPackage { build = false; });
+            generateTerraformVars = makeGenerateTfVars "nix-lxcs" (makeTfVarsPackage { lxcs = import ./lxcs; });
+          in
+          {
+            default = self.apps.${system}.deploy;
+            deploy = {
+              type = "app";
+              program = toString (pkgs.writers.writeBash "deploy" ''
+                ${enableBuild.program}
+                ${generateTerraformVars.program}
+                ${pkgs.terraform}/bin/terraform apply
               '');
-          };
-        } // genAttrs [ "init" "plan" "apply" "destroy" ] (cmd: {
-          type = "app";
-          program = toString (pkgs.writers.writeBash cmd ''
-            ${self.apps.${system}.generateTerraformVars.program}
-            ${pkgs.terraform}/bin/terraform ${cmd}
-          '');
-        });
+            };
+            ageFromSsh = {
+              type = "app";
+              program = toString (pkgs.writers.writeBash "ageFromSsh" ''
+                ssh-keyscan "$1" | ${pkgs.ssh-to-age}/bin/ssh-to-age
+              '');
+            };
+          } // genAttrs [ "init" "plan" "apply" "destroy" ] (cmd: {
+            type = "app";
+            program = toString (pkgs.writers.writeBash cmd ''
+              ${disableBuild.program}
+              ${generateTerraformVars.program}
+              ${pkgs.terraform}/bin/terraform ${cmd}
+            '');
+          });
 
         legacyPackages.nixosConfigurations = genAttrs services (name: makeProxmoxLxcConfig [{ config.my.services.${name}.enable = true; }]);
         packages = rec {
           default = base-proxmox-lxc;
           base-proxmox-lxc = makeProxmoxLxcTarball [ ];
-          terraform-vars =
-            let
-              tfVars = { lxcs = import ./lxcs; };
-            in
-            pkgs.runCommand "terraform-vars" { } ''
-              echo '${builtins.toJSON tfVars}' | ${pkgs.jq}/bin/jq > $out
-            '';
         } // genAttrs services (name: makeProxmoxLxcTarball [{ config.my.services.${name}.enable = true; }]);
 
         devShells.default = with pkgs; mkShell {
           buildInputs = [
+            age
             (terraform.withPlugins (b: with b; [
               external
               local
-              null
+              b.null
               proxmox
             ]))
             nixd
             nixpkgs-fmt
+            sops
           ];
         };
-      }
-    );
+      });
 }

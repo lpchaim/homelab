@@ -1,6 +1,7 @@
 {
   imports = [
     ./platforms
+    ./secrets
     ./services
   ];
 }
