@@ -2,7 +2,8 @@
 
 with lib;
 let
-  lxcs = {
+  makeDefaultModules = name: [{ config.my.services.${name}.enable = true; }];
+  byId = {
     "241" = {
       name = "caddy";
       enable = false;
@@ -10,6 +11,7 @@ let
       tags = [ "networking" ];
       cores = 2;
       memory = 256;
+      nix.modules = makeDefaultModules "caddy";
     };
     "300" = {
       name = "traefik";
@@ -23,11 +25,13 @@ let
         { mp = "/etc/crowdsec"; volume = "/srv/storage/AppData/config/crowdsec"; }
         { mp = "/var/lib/crowdsec"; volume = "/srv/storage/AppData/data/crowdsec"; }
       ];
+      nix.modules = makeDefaultModules "traefik";
     };
-    "810" = {
+    "810" = rec {
       name = "jellyfin";
       privileged = true;
       ip = "10.10.8.10";
+      services = [ "http://${ip}:8096" ];
       tags = [ "media" ];
       memory = 4096;
       cores = 6;
@@ -46,13 +50,13 @@ let
         { mp = "/var/lib/jellyfin/root"; volume = "/srv/storage/AppData/config/jellyfin/data/root"; }
         { mp = "/var/cache/jellyfin"; volume = "/srv/storage/AppData/config/jellyfin/cache"; }
       ];
-      nixConfig = let self = lxcs."810"; in
-        {
-          reverseProxy = {
-            enable = true;
-            servers = [ "http://${self.ip}:8096" ];
-          };
-        };
+      nix.modules = makeDefaultModules "jellyfin";
     };
   };
-in lxcs
+in
+rec {
+  inherit byId;
+  asList = attrValues byId;
+  byName = mapAttrs' (_: lxc: nameValuePair lxc.name lxc) byId;
+  byRole = { reverseProxy = byName.traefik; };
+}

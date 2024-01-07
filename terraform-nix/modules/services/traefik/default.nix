@@ -9,7 +9,7 @@ let
 
   dataDir = config.services.traefik.dataDir;
   domain = myCfg.domain;
-  lxcs = filterAttrs (_: lxc: lxc.nixConfig.reverseProxy.enable or false) config.my.lxcs;
+  lxcs = filterAttrs (_: lxc: lxc ? services) config.my.lxcs;
 
   trustedIpsPrivate = myCfg.networking.cidrs.private;
   trustedIps = myCfg.networking.cidrs.trusted;
@@ -54,7 +54,7 @@ with lib;
             lxcs;
           services = mapAttrs'
             (_: lxc: nameValuePair lxc.name {
-              loadBalancer.servers = map (url: { inherit url; }) lxc.nixConfig.reverseProxy.servers;
+              loadBalancer.servers = map (url: { inherit url; }) lxc.services;
             })
             lxcs;
           middlewares = {

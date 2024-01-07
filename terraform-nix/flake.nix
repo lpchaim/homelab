@@ -14,7 +14,7 @@
     sops-nix.url = "github:Mic92/sops-nix";
   };
 
-  outputs = { self, flake-utils, nixpkgs, nixos-generators, sops-nix, ... }@inputs:
+  outputs = { self, flake-utils, nixpkgs, nixos-generators, ... }@inputs:
     flake-utils.lib.eachDefaultSystem (system:
       let
         makePkgs = nixpkgs:
@@ -30,7 +30,11 @@
 
         makeCommonConfig = { modules ? [ ], pkgs ? pkgs }: {
           inherit system;
-          modules = [{ system.stateVersion = "23.11"; } ./modules sops-nix.nixosModules.sops] ++ modules;
+          modules = [
+            { system.stateVersion = "23.11"; }
+            inputs.sops-nix.nixosModules.sops
+            ./modules
+          ] ++ modules;
           specialArgs = { inherit inputs pkgs system; };
         };
         makeProxmoxLxcConfig = { modules ? [ ], pkgs ? pkgs, generator ? nixpkgs.lib.nixosSystem }:
@@ -53,25 +57,26 @@
             modules = modules;
           });
 
-        serviceFiles = builtins.removeAttrs (builtins.readDir ./modules/services) [ "default.nix" ];
-        services = builtins.map (name: pkgs.lib.removeSuffix ".nix" name) (builtins.attrNames serviceFiles);
+        lxcs = import ./lxcs { inherit (pkgs) lib; };
       in
       with pkgs.lib;
       rec {
-        nixosConfigurations = genAttrs
-          services
-          (name: makeProxmoxLxcConfig {
+        nixosConfigurations = mapAttrs
+          (_: lxc: makeProxmoxLxcConfig {
             inherit pkgs;
-            modules = [{ config.my.services.${name}.enable = true; }];
-          });
+            modules = lxc.nix.modules or [];
+          })
+          lxcs.byName;
 
         packages = rec {
           default = lxc-base;
           lxc-base = makeProxmoxLxcTarball { inherit pkgs; };
-        } // genAttrs services (name: makeProxmoxLxcTarball {
-          modules = [{ config.my.services.${name}.enable = true; }];
-          inherit pkgs;
-        });
+        } // mapAttrs
+          (_: lxc: makeProxmoxLxcTarball {
+            inherit pkgs;
+            modules = lxc.nix.modules or [];
+          })
+          lxcs.byName;
         legacyPackages.nixosConfigurations = nixosConfigurations; # Workaround for the Terraform provider
 
         apps =
@@ -91,7 +96,7 @@
               };
             enableBuild = makeGenerateTfVars "nix-build" (makeTfVarsPackage { build = true; });
             disableBuild = makeGenerateTfVars "nix-build" (makeTfVarsPackage { build = false; });
-            generateTerraformVars = makeGenerateTfVars "nix-lxcs" (makeTfVarsPackage { lxcs = import ./lxcs { lib = pkgs.lib; }; });
+            generateTerraformVars = makeGenerateTfVars "nix-lxcs" (makeTfVarsPackage { lxcs = lxcs.byId; });
           in
           {
             default = self.apps.${system}.deploy;
@@ -100,13 +105,19 @@
               program = toString (pkgs.writers.writeBash "deploy" ''
                 ${enableBuild.program}
                 ${generateTerraformVars.program}
-                ${pkgs.terraform}/bin/terraform apply
+                ${pkgs.terraform}/bin/terraform apply "$([ "$1" ] && echo "-target=module.nixos["1010"]" || echo "")"
               '');
             };
             ageFromSsh = {
               type = "app";
               program = toString (pkgs.writers.writeBash "ageFromSsh" ''
                 (ssh-keyscan "$1" | ${pkgs.ssh-to-age}/bin/ssh-to-age) 2>/dev/null
+              '');
+            };
+            buildOsConfig = {
+              type = "app";
+              program = toString (pkgs.writers.writeBash "buildosconfig" ''
+                nix build ".#legacyPackages.x86_64-linux.nixosConfigurations.$1.config.system.build.toplevel" --show-trace
               '');
             };
           } // genAttrs [ "init" "plan" "apply" "destroy" ] (cmd: {
