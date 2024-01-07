@@ -18,6 +18,22 @@
         "type": "github"
       }
     },
+    "mmproxy": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1641486126,
+        "narHash": "sha256-elus7Jh4ZPZGNnY5FgCC34qBXVvmU+TovlRFW67UFNk=",
+        "owner": "cloudflare",
+        "repo": "mmproxy",
+        "rev": "ac4b6083dc180758b3caf15b64a157f8ce5199c7",
+        "type": "github"
+      },
+      "original": {
+        "owner": "cloudflare",
+        "repo": "mmproxy",
+        "type": "github"
+      }
+    },
     "nixlib": {
       "locked": {
         "lastModified": 1693701915,
@@ -88,11 +104,11 @@
     },
     "nixpkgs-unstable": {
       "locked": {
-        "lastModified": 1701718080,
-        "narHash": "sha256-6ovz0pG76dE0P170pmmZex1wWcQoeiomUZGggfH9XPs=",
+        "lastModified": 1704194953,
+        "narHash": "sha256-RtDKd8Mynhe5CFnVT8s0/0yqtWFMM9LmCzXv/YKxnq4=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "2c7f3c0fb7c08a0814627611d9d7d45ab6d75335",
+        "rev": "bd645e8668ec6612439a9ee7e71f7eac4099d4f6",
         "type": "github"
       },
       "original": {
@@ -120,6 +136,7 @@
     "root": {
       "inputs": {
         "flake-utils": "flake-utils",
+        "mmproxy": "mmproxy",
         "nixos-generators": "nixos-generators",
         "nixpkgs": "nixpkgs",
         "nixpkgs-unstable": "nixpkgs-unstable",

@@ -4,6 +4,10 @@
     nixpkgs-unstable.url = "nixpkgs/nixos-unstable";
 
     flake-utils.url = "github:numtide/flake-utils";
+    mmproxy = {
+      flake = false;
+      url = "github:cloudflare/mmproxy";
+    };
     nixos-generators = {
       url = "github:nix-community/nixos-generators";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -23,6 +27,7 @@
               allowUnfree = true;
               allowUnfreePredicate = _: true;
             };
+            overlays = (import ./overlays { inherit inputs pkgs; });
           };
         pkgs = makePkgs nixpkgs;
         pkgsUnstable = makePkgs nixpkgs-unstable;
