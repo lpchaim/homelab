@@ -28,17 +28,17 @@ provider "proxmox" {
 }
 
 locals {
-  lxcs = [
-    for lxc in var.lxcs : merge(lxc, {
+  lxcs = {
+    for vmid, lxc in var.lxcs : vmid => merge(lxc, {
       flake = coalesce(lxc.flake, lxc.name)
     }) if lxc.enable
-  ]
+  }
 }
 
 resource "proxmox_lxc" "nixos" {
-  for_each = { for key, val in local.lxcs : key => val }
+  for_each = local.lxcs
 
-  vmid         = each.value.vmid
+  vmid         = each.key
   tags         = join(";", sort(concat(["nixos", "terraform"], each.value.tags)))
   start        = true
   onboot       = each.value.onboot
@@ -69,7 +69,6 @@ resource "proxmox_lxc" "nixos" {
     name   = "eth0"
     bridge = "vmbr0"
     ip     = "${each.value.ip}/${var.network_subnet}"
-    ip6    = "dhcp"
     gw     = var.network_gateway
   }
 
@@ -97,12 +96,12 @@ resource "proxmox_lxc" "nixos" {
 
   provisioner "remote-exec" {
     inline = length(each.value.extra_config) > 0 ? concat(
-      [for line in each.value.extra_config : "echo '${line}' >> /etc/pve/lxc/${each.value.vmid}.conf"],
+      [for line in each.value.extra_config : "echo '${line}' >> /etc/pve/lxc/${each.key}.conf"],
       [
-        "awk -i inplace '!a[$0]++' /etc/pve/lxc/${each.value.vmid}.conf", # Removes duplicate lines, just in case
-        "sleep 2 && pct reboot ${each.value.vmid}"
+        "awk -i inplace '!a[$0]++' /etc/pve/lxc/${each.key}.conf", # Removes duplicate lines, just in case
+        "pct reboot ${each.key}"
       ]
-    ) : []
+    ) : [":"]
   }
 }
 
@@ -114,14 +113,14 @@ module "nixos" {
   host  = "${each.value.user}@${each.value.ip}"
   flake = ".#${each.value.flake}"
 
-  arguments = [
+  arguments = each.value.remotebuild ? [
     # You can build on another machine, including the target machine, by
     # enabling this option, but if you build on the target machine then make
     # sure that the firewall and security group permit outbound connections.
     "--build-host", "${each.value.user}@${each.value.ip}",
-  ]
+  ] : []
 
-  ssh_options = "-o StrictHostKeyChecking=no"
+  ssh_options = "-o StrictHostKeyChecking=accept-new"
 
   depends_on = [proxmox_lxc.nixos]
 }

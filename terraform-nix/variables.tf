@@ -43,11 +43,11 @@ variable "authorized_keys" {
 
 variable "lxcs" {
   description = "List of maps describing LXC containers"
-  type = list(object({
+  type = map(object({
     name        = string
-    vmid        = number
     ip          = string
     enable      = optional(bool, true)
+    remotebuild = optional(bool, true)
     onboot      = optional(bool, true)
     rootfs_size = optional(string, "8G")
     privileged  = optional(bool, false)
