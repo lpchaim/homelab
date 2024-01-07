@@ -1,9 +1,20 @@
 {
 	"nix.enableLanguageServer": true,
-	"nix.serverPath": "nixd",
+	"nix.serverPath": "rnix-lsp",
 	"nix.formatterPath": "nixpkgs-fmt",
 	"[nix]": {
 		"editor.insertSpaces": true,
 		"editor.tabSize": 2
+	},
+	"files.exclude": {
+		"**/.git": true,
+		"**/.svn": true,
+		"**/.hg": true,
+		"**/CVS": true,
+		"**/.DS_Store": true,
+		"**/Thumbs.db": true,
+		".direnv": true,
+		"result": true,
+		"/nix": true
 	}
 }
