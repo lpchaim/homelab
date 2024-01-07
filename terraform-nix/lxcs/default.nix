@@ -2,7 +2,13 @@
 
 with lib;
 let
+  config.my = {
+    networking = import ../modules/config/networking.nix;
+    storage = import ../modules/config/storage.nix;
+  };
+
   makeDefaultModules = name: [{ config.my.services.${name}.enable = true; }];
+
   byId = {
     "241" = {
       name = "caddy";
@@ -41,15 +47,19 @@ let
         "lxc.mount.entry: /dev/dri/card0 dev/dri/card0 none bind,optional,create=file,mode=0666"
         "lxc.mount.entry: /dev/dri/renderD128 dev/dri/renderD128 none bind,optional,create=file"
       ];
-      mountpoints = [
-        { mp = "/data"; volume = "/srv/storage"; }
-        { mp = "/config"; volume = "/srv/storage/AppData/config/jellyfin"; }
-        { mp = "/var/lib/jellyfin/data"; volume = "/srv/storage/AppData/config/jellyfin/data/data"; }
-        { mp = "/var/lib/jellyfin/metadata"; volume = "/srv/storage/AppData/config/jellyfin/data/metadata"; }
-        { mp = "/var/lib/jellyfin/plugins"; volume = "/srv/storage/AppData/config/jellyfin/data/plugins"; }
-        { mp = "/var/lib/jellyfin/root"; volume = "/srv/storage/AppData/config/jellyfin/data/root"; }
-        { mp = "/var/cache/jellyfin"; volume = "/srv/storage/AppData/config/jellyfin/cache"; }
-      ];
+      mountpoints =
+        let
+          cfgPath = config.my.storage.getConfigPath "jellyfin";
+        in
+        [
+          { mp = "/data"; volume = config.my.storage.main; }
+          { mp = "/config"; volume = cfgPath; }
+          { mp = "/var/lib/jellyfin/data"; volume = "${cfgPath}/data/data"; }
+          { mp = "/var/lib/jellyfin/metadata"; volume = "${cfgPath}/data/metadata"; }
+          { mp = "/var/lib/jellyfin/plugins"; volume = "${cfgPath}/data/plugins"; }
+          { mp = "/var/lib/jellyfin/root"; volume = "${cfgPath}/data/root"; }
+          { mp = "/var/cache/jellyfin"; volume = "${cfgPath}/cache"; }
+        ];
       nix.modules = makeDefaultModules "jellyfin";
     };
   };
