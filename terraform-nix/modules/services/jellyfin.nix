@@ -12,6 +12,9 @@ with lib;
   };
 
   config = mkIf cfg.enable {
+    networking.firewall.allowedTCPPorts = [ 8096 8920 ];
+    networking.firewall.allowedUDPPorts = [ 1900 7359 ];
+
     proxmoxLXC.privileged = true;
 
     users = {
