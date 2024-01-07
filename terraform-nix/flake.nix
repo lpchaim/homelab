@@ -71,12 +71,25 @@
         packages = rec {
           default = lxc-base;
           lxc-base = makeProxmoxLxcTarball { inherit pkgs; };
-        } // mapAttrs
-          (_: lxc: makeProxmoxLxcTarball {
-            inherit pkgs;
-            modules = lxc.nix.modules or [];
-          })
-          lxcs.byName;
+        }
+        // mapAttrs'
+          (name: lxc: nameValuePair
+            "lxc-${name}"
+            (makeProxmoxLxcTarball {
+              inherit pkgs;
+              modules = lxc.nix.modules or [ ];
+            })
+          )
+          lxcs.byName
+        // mapAttrs'
+          (vmid: lxc: nameValuePair
+            "lxc-${vmid}"
+            (makeProxmoxLxcTarball {
+              inherit pkgs;
+              modules = lxc.nix.modules or [ ];
+            })
+          )
+          lxcs.byId;
         legacyPackages.nixosConfigurations = nixosConfigurations; # Workaround for the Terraform provider
 
         apps =
