@@ -24,7 +24,7 @@
               allowUnfree = true;
               allowUnfreePredicate = _: true;
             };
-            overlays = (import ./overlays { inherit inputs pkgs; });
+            overlays = import ./overlays { inherit inputs pkgs; };
           };
         pkgs = makePkgs nixpkgs;
 
@@ -50,8 +50,7 @@
         makeProxmoxLxcTarball = { pkgs, modules ? [ ] }:
           nixos-generators.nixosGenerate ({
             format = "proxmox-lxc";
-            pkgs = nixpkgs.legacyPackages.${system};
-            lib = nixpkgs.legacyPackages.${system}.lib;
+            inherit (pkgs) lib;
           } // makeCommonConfig {
             inherit pkgs;
             modules = modules;
@@ -64,7 +63,7 @@
         nixosConfigurations = mapAttrs
           (_: lxc: makeProxmoxLxcConfig {
             inherit pkgs;
-            modules = lxc.nix.modules or [];
+            modules = lxc.nix.modules or [ ];
           })
           lxcs.byName;
 
@@ -118,7 +117,7 @@
               program = toString (pkgs.writers.writeBash "deploy" ''
                 ${enableBuild.program}
                 ${generateTerraformVars.program}
-                ${pkgs.terraform}/bin/terraform apply "$([ "$1" ] && echo "-target=module.nixos["1010"]" || echo "")"
+                ${pkgs.terraform}/bin/terraform apply
               '');
             };
             ageFromSsh = {
@@ -130,7 +129,7 @@
             buildOsConfig = {
               type = "app";
               program = toString (pkgs.writers.writeBash "buildosconfig" ''
-                nix build ".#legacyPackages.x86_64-linux.nixosConfigurations.$1.config.system.build.toplevel" --show-trace
+                nix build ".#nixosConfigurations.${system}.$1.config.system.build.toplevel" --show-trace
               '');
             };
           } // genAttrs [ "init" "plan" "apply" "destroy" ] (cmd: {
@@ -151,6 +150,7 @@
               b.null
               proxmox
             ]))
+            nil
             nixd
             nixpkgs-fmt
             rnix-lsp

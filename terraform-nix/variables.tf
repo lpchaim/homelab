@@ -47,7 +47,7 @@ variable "lxcs" {
     name        = string
     ip          = string
     enable      = optional(bool, true)
-    remotebuild = optional(bool, true)
+    remotebuild = optional(bool, false)
     onboot      = optional(bool, true)
     rootfs_size = optional(string, "8G")
     privileged  = optional(bool, false)

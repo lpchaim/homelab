@@ -1,11 +1,18 @@
 keys:
-  - &primary age1dsuede07h7akeaucp53uyxu6wa5y3yapxy3c0nh34vcdhxnanacqr6q3tc
+  - &primary age10fa7ce7w6q0ppk5l2gvg6d02g9cmj26rpt00ct54d4latqsnwajs90a43h
+  - &docker age1q256fq2ef0qm7a9yvp80ttnmk0xuusuwtduvrp7x7d6pz63lnqssjw3473
   - &traefik age1k53pxzjtln8ds72ys5crlqz48q3flr8kawjhfmu34w4306mahscqgdamrx
 creation_rules:
   - path_regex: secrets/[^/]+\.(yaml|json|env|ini)$
     key_groups:
     - age:
       - *primary
+      - *docker
+  - path_regex: secrets/docker/[^/]+\.(yaml|json|env|ini)$
+    key_groups:
+    - age:
+      - *primary
+      - *docker
   - path_regex: secrets/traefik/[^/]+\.(yaml|json|env|ini)$
     key_groups:
     - age:

@@ -81,12 +81,6 @@ resource "proxmox_lxc" "nixos" {
     nesting = true
   }
 
-  lifecycle {
-    ignore_changes = [
-      rootfs,
-    ]
-  }
-
   connection {
     type        = "ssh"
     user        = var.pm_user

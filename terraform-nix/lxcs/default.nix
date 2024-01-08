@@ -22,7 +22,6 @@ let
     "300" = {
       name = "traefik";
       enable = false;
-      remotebuild = false;
       ip = "10.10.3.0";
       tags = [ "networking" ];
       cores = 2;
@@ -61,6 +60,19 @@ let
           { mp = "/var/cache/jellyfin"; volume = "${cfgPath}/cache"; }
         ];
       nix.modules = makeDefaultModules "jellyfin";
+    };
+    "1000" = {
+      name = "docker";
+      privileged = true;
+      ip = "10.10.10.0";
+      tags = [ "docker" ];
+      memory = 4096;
+      cores = 6;
+      rootfs_size = "30G";
+      mountpoints = [
+        { mp = "/srv/storage"; volume = "/srv/storage"; }
+      ];
+      nix.modules = makeDefaultModules "docker";
     };
   };
 in
