@@ -34,7 +34,7 @@ with lib;
 
   config = mkIf cfg.enable {
     sops = {
-      defaultSopsFile = ../../../secrets/docker/default.env;
+      defaultSopsFile = ../../../../secrets/docker/default.env;
       secrets."docker.env" = {
         owner = user.name;
         path = "${user.home}/.env";
