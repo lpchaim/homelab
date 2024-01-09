@@ -1,3 +1,5 @@
+_:
+
 rec {
   main = "/srv/storage";
   appData = "${main}/AppData";

@@ -1,25 +1,44 @@
-{ lib, ... }:
+{ lib, ... }@args:
 
 with lib;
 let
   config.my = {
-    networking = import ../modules/config/networking.nix;
-    storage = import ../modules/config/storage.nix;
+    networking = import ../modules/config/networking.nix args;
+    storage = import ../modules/config/storage.nix args;
   };
 
-  makeDefaultModules = name: [{ config.my.services.${name}.enable = true; }];
+  makeDefault = lxc: lxc // { nix.modules = (lxc.nix.modules or []) ++ [
+    (enableServiceByName lxc.name)
+    (manageNetwork lxc.ip)
+  ]; };
+  enableServiceByName = name: { config.my.services.${name}.enable = true; };
+  manageNetwork = ip: {
+    config.proxmoxLXC.manageNetwork = true;
+    config.networking = {
+      interfaces = {
+        eth0.ipv4.addresses = [{
+          address = ip;
+          prefixLength = config.my.networking.ipv4.prefixLength;
+        }];
+      };
+      defaultGateway = {
+        address = config.my.networking.ipv4.gateway;
+        interface = "eth0";
+      };
+      nameservers = [ "10.0.0.2" ];
+    };
+  };
 
   byId = {
-    "241" = {
+    "241" = makeDefault {
       name = "caddy";
       enable = false;
       ip = "10.10.2.41";
       tags = [ "networking" ];
       cores = 2;
       memory = 256;
-      nix.modules = makeDefaultModules "caddy";
     };
-    "300" = {
+    "300" = makeDefault {
       name = "traefik";
       enable = false;
       ip = "10.10.3.0";
@@ -30,9 +49,8 @@ let
         { mp = "/etc/crowdsec"; volume = "/srv/storage/AppData/config/crowdsec"; }
         { mp = "/var/lib/crowdsec"; volume = "/srv/storage/AppData/data/crowdsec"; }
       ];
-      nix.modules = makeDefaultModules "traefik";
     };
-    "810" = rec {
+    "810" = makeDefault rec {
       name = "jellyfin";
       privileged = true;
       ip = "10.10.8.10";
@@ -59,9 +77,8 @@ let
           { mp = "/var/lib/jellyfin/root"; volume = "${cfgPath}/data/root"; }
           { mp = "/var/cache/jellyfin"; volume = "${cfgPath}/cache"; }
         ];
-      nix.modules = makeDefaultModules "jellyfin";
     };
-    "1000" = {
+    "1000" = makeDefault {
       name = "docker";
       privileged = true;
       ip = "10.10.10.0";
@@ -72,7 +89,6 @@ let
       mountpoints = [
         { mp = "/srv/storage"; volume = "/srv/storage"; }
       ];
-      nix.modules = makeDefaultModules "docker";
     };
   };
 in

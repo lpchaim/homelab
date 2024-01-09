@@ -10,7 +10,7 @@ in
     email = mkReadonlyOption "lpchaim@gmail.com";
     lxcs = mkReadonlyOption (import ../../lxcs args);
     networking = mkReadonlyOption (import ./networking.nix args);
-    storage = mkReadonlyOption (import ./storage.nix);
+    storage = mkReadonlyOption (import ./storage.nix args);
     timezone = mkReadonlyOption "America/Sao_Paulo";
   };
 }

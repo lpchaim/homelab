@@ -17,7 +17,7 @@ in {
     };
 
     proxmoxLXC = {
-      manageNetwork = false;
+      manageNetwork = mkDefault false;
       manageHostName = false;
     };
   };

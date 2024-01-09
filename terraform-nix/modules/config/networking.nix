@@ -1,8 +1,10 @@
-{ lib ? pkgs.lib, pkgs, ... }:
+{ lib ? pkgs.lib, pkgs ? import <nixpkgs>, ... }:
 
 {
-  defaultGateway = "10.0.0.1";
-  defaultPrefixLength = "8";
+  ipv4 = {
+    gateway = "10.0.0.1";
+    prefixLength = 8;
+  };
   cidrs = rec {
     trusted = private ++ cloudflare;
     private = [ "10.0.0.0/8" "fe80::/10" ];
