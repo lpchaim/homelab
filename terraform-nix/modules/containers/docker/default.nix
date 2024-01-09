@@ -64,13 +64,21 @@ with lib;
         allowedUDPPorts = sanitizePorts rawUdpPorts;
       };
 
-    virtualisation.docker.enable = true;
-
-    environment.etc."timezone".text = config.my.timezone;
+    virtualisation.docker = {
+      enable = true;
+      autoPrune = {
+        enable = true;
+        flags = [ "--all" "--force" ];
+        dates = "weekly";
+      };
+    };
 
     system.activationScripts = {
       docker-compose-cp.text = toString (pkgs.writers.writeBash "docker-compose-cp" ''
         cp -r ${composeFile} ${user.home}/compose.yaml
+      '');
+      docker-socket-perms.text = toString (pkgs.writers.writeBash "docker-socket-perms" ''
+        chmod o+rw /var/run/docker.sock
       '');
       docker-compose-up.text = toString (pkgs.writers.writeBash "docker-compose-up" ''
         cd ${user.home} && ${pkgs.docker}/bin/docker compose up -d
@@ -108,10 +116,7 @@ with lib;
     };
     users.groups.socat = { };
 
-    # Cron job to clean up dangling images
-    services.cron = {
-      enable = true;
-      systemCronJobs = [ "0 2 * * 0   docker image prune --force --all" ];
-    };
+    # Misc adjustments
+    environment.etc."timezone".text = config.my.timezone;
   };
 }

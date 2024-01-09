@@ -22,7 +22,7 @@ in
 
   services = {
     cloudflare-ddns = makeDefault {
-      image = "oznu/cloudflare-ddns";
+      image = "oznu/cloudflare-ddns:latest";
       environment = {
         API_KEY = "\${secret_cloudflare_api_token}";
         ZONE = config.my.domain;
@@ -34,7 +34,7 @@ in
     };
 
     crowdsec = makeDefault {
-      image = "crowdsecurity/crowdsec";
+      image = "crowdsecurity/crowdsec:latest";
       networks = [ "default" "external" ];
       volumes = [
         "${config.my.storage.getConfigPath "crowdsec"}:/etc/crowdsec"
@@ -44,7 +44,7 @@ in
     };
 
     themepark = makeDefault {
-      image = "ghcr.io/themepark-dev/theme.park";
+      image = "ghcr.io/themepark-dev/theme.park:latest";
       ports = [ "8084:80" "8444:443" ];
       volumes = [ "${config.my.storage.getConfigPath "themepark"}:/config" ];
       labels = {
@@ -57,7 +57,7 @@ in
     };
 
     traefik = makeDefault {
-      image = "traefik:v2.9";
+      image = "traefik:v2.10";
       environment = { CF_DNS_API_TOKEN = "\${secret_cloudflare_api_token}"; };
       networks = [ "default" "external" ];
       ports = [
@@ -70,10 +70,13 @@ in
         "${config.my.storage.getConfigPath "traefik"}/acme:/etc/traefik/acme"
         "/var/run/docker.sock:/var/run/docker.sock"
       ];
+      labels = {
+        "com.centurylinklabs.watchtower.enable" = "false";
+      };
     };
 
     audiobookshelf = makeDefault {
-      image = "ghcr.io/advplyr/audiobookshelf:2.7.0";
+      image = "ghcr.io/advplyr/audiobookshelf:latest";
       ports = [ "13378:80" ];
       volumes = [
         "${config.my.storage.getConfigPath "audiobookshelf"}:/config"
@@ -148,7 +151,7 @@ in
     };
 
     lidarr = makeDefault {
-      image = "lscr.io/linuxserver/lidarr:2.0.7.3849-ls148";
+      image = "lscr.io/linuxserver/lidarr:latest";
       ports = [ "8686:8686" ];
       volumes =
         [ "${config.my.storage.getConfigPath "lidarr"}:/config" "${config.my.storage.main}:/storage" ];
@@ -216,7 +219,7 @@ in
 
     readarr = makeDefault {
       profiles = [ "disable" ];
-      image = "lscr.io/linuxserver/readarr:nightly-0.3.14.2348-ls257";
+      image = "lscr.io/linuxserver/readarr:latest";
       ports = [ "8787:8787" ];
       volumes =
         [ "${config.my.storage.getConfigPath "readarr"}:/config" "${config.my.storage.main}:/storage" ];
@@ -331,13 +334,13 @@ in
     };
 
     homepage = makeDefault {
-      image = "ghcr.io/gethomepage/homepage:v0.8.0";
+      image = "ghcr.io/gethomepage/homepage:latest";
       networks = [ "default" "external" ];
       ports = [ "3000:3000" ];
       volumes = [
         "${config.my.storage.getConfigPath "homepage"}:/app/config"
-        "/var/run/docker.sock:/var/run/docker.sock"
         "${config.my.storage.main}:/storage:ro"
+        "/var/run/docker.sock:/var/run/docker.sock"
       ];
       labels = {
         "traefik.enable" = "true";
@@ -372,6 +375,7 @@ in
       ports = [ "3001:3000" "222:22" ];
       volumes = [ "${config.my.storage.getDataPath "forgejo-server"}:/data" ];
       labels = {
+        "com.centurylinklabs.watchtower.enable" = "false";
         "homepage.group" = "Other";
         "homepage.name" = "Forgejo";
         "homepage.icon" = "forgejo.png";
@@ -394,8 +398,10 @@ in
         POSTGRES_DB = "forgejo";
       };
       networks = [ "default" ];
-      volumes =
-        [ "${config.my.storage.getDataPath "forgejo-postgres"}:/var/lib/postgresql/data" ];
+      volumes = [ "${config.my.storage.getDataPath "forgejo-postgres"}:/var/lib/postgresql/data" ];
+      labels = {
+        "com.centurylinklabs.watchtower.enable" = "false";
+      };
     };
 
     influxdb = makeDefault {
@@ -431,9 +437,9 @@ in
       image = "lscr.io/linuxserver/qbittorrent:latest";
       environment = {
         WEBUI_PORT = "8081";
-        DOCKER_MODS = "ghcr.io/themepark-dev/theme.park:qbittorrent";
-        TP_DOMAIN = "themepark.${config.my.domain}";
-        TP_THEME = "frappe";
+        # DOCKER_MODS = "ghcr.io/themepark-dev/theme.park:qbittorrent";
+        # TP_DOMAIN = "themepark.${config.my.domain}";
+        # TP_THEME = "frappe";
       };
       networks = [ "default" "external" ];
       ports = [ "8081:8081" "6881:6881" "6881:6881/udp" ];
@@ -517,7 +523,7 @@ in
     };
 
     watchtower = makeDefault {
-      image = "containrrr/watchtower";
+      image = "containrrr/watchtower:latest";
       networks = [ "default" "external" ];
       environment = {
         WATCHTOWER_SCHEDULE = "0 2 * * *";
@@ -528,7 +534,7 @@ in
     };
 
     yacht = makeDefault {
-      image = "selfhostedpro/yacht";
+      image = "selfhostedpro/yacht:latest";
       networks = [ "default" "external" ];
       ports = [ "8000:8000" ];
       volumes = [
