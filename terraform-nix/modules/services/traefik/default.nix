@@ -1,6 +1,6 @@
 # Documentation: https://nixos.wiki/wiki/Traefik
 
-{ config, inputs, lib, options, pkgs, system, ... }:
+{ config, lib, pkgs, ... }:
 
 with lib;
 let
@@ -22,8 +22,7 @@ with lib;
 
   config = mkIf cfg.enable {
     sops = {
-      defaultSopsFile = ../../../secrets/traefik/traefik.env;
-      defaultSopsFormat = "dotenv";
+      defaultSopsFile = ../../../secrets/traefik/default.env;
       secrets."traefik.env" = { };
     };
 

@@ -1,6 +1,6 @@
 # Documentation: https://nixos.wiki/wiki/Caddy
 
-{ config, lib, options, ... }:
+{ config, lib, ... }:
 
 let
   cfg = config.my.services.caddy;
