@@ -7,10 +7,12 @@ let
     storage = import ../modules/config/storage.nix args;
   };
 
-  makeDefault = lxc: lxc // { nix.modules = (lxc.nix.modules or []) ++ [
-    (enableServiceByName lxc.name)
-    (manageNetwork lxc.ip)
-  ]; };
+  makeDefault = lxc: lxc // {
+    nix.modules = (lxc.nix.modules or []) ++ [
+      (enableServiceByName lxc.name)
+      (manageNetwork lxc.ip)
+    ];
+  };
   enableServiceByName = name: { config.my.services.${name}.enable = true; };
   manageNetwork = ip: {
     config.proxmoxLXC.manageNetwork = true;
@@ -88,6 +90,9 @@ let
       rootfs_size = "30G";
       mountpoints = [
         { mp = "/srv/storage"; volume = "/srv/storage"; }
+      ];
+      nix.modules = [
+        { config.my.services.docker.compose.enable = true; }
       ];
     };
   };

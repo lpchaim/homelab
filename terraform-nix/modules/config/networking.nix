@@ -5,6 +5,10 @@
     gateway = "10.0.0.1";
     prefixLength = 8;
   };
+  ports.internal = {
+    http = 8099;
+    https = 44399;
+  };
   cidrs = rec {
     trusted = private ++ cloudflare;
     private = [ "10.0.0.0/8" "fe80::/10" ];

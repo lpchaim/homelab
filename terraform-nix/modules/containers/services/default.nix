@@ -1,5 +1,6 @@
-{ config, ports, ... }:
+{ config, lib, ... }:
 
+with lib;
 let
   makeDefault = dockerConfig:
     (dockerConfig // {
@@ -17,10 +18,7 @@ let
     });
 in
 {
-  name = "homelab";
-  version = "3.6";
-
-  services = {
+  options.my.containers.services = mkOption { default = {
     cloudflare-ddns = makeDefault {
       image = "oznu/cloudflare-ddns:latest";
       environment = {
@@ -61,8 +59,8 @@ in
       environment = { CF_DNS_API_TOKEN = "\${secret_cloudflare_api_token}"; };
       networks = [ "default" "external" ];
       ports = [
-        "${builtins.toString ports.internal.http}:80"
-        "${builtins.toString ports.internal.https}:443"
+        "${builtins.toString config.my.networking.ports.internal.http}:80"
+        "${builtins.toString config.my.networking.ports.internal.https}:443"
         "8080:8080"
       ];
       volumes = [
@@ -542,14 +540,5 @@ in
         "/var/run/docker.sock:/var/run/docker.sock"
       ];
     };
-  };
-
-  networks = {
-    default = {
-      internal = true;
-      ipam.config = [{ subnet = "172.16.80.0/24"; }];
-    };
-
-    external.ipam.config = [{ subnet = "10.10.250.0/24"; }];
-  };
+  }; };
 }
