@@ -8,7 +8,7 @@ let
   };
 
   makeDefault = lxc: lxc // {
-    nix.modules = (lxc.nix.modules or []) ++ [
+    nix.modules = (lxc.nix.modules or [ ]) ++ [
       (enableServiceByName lxc.name)
       (manageNetwork lxc.ip)
     ];
@@ -92,7 +92,7 @@ let
         { mp = "/srv/storage"; volume = "/srv/storage"; }
       ];
       nix.modules = [
-        { config.my.services.docker.compose.enable = true; }
+        { config.my.services.containers.instrumentation.compose.enable = true; }
       ];
     };
   };

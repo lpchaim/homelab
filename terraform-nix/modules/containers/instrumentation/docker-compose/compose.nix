@@ -4,7 +4,7 @@
   name = "homelab";
   version = "3.6";
 
-  services = config.my.containers.services;
+  services = config.my.containers.services.out;
 
   networks = {
     default = {

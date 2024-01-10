@@ -2,7 +2,7 @@
 
 with lib;
 let
-  cfg = config.my.services.docker.compose;
+  cfg = config.my.services.containers.instrumentation.compose;
 
   user = config.users.users.root;
 
@@ -22,7 +22,7 @@ let
 in
 with lib;
 {
-  options.my.services.docker.compose = {
+  options.my.services.containers.instrumentation.compose = {
     enable = mkEnableOption "docker compose";
   };
 
