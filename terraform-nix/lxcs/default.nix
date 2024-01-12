@@ -91,9 +91,14 @@ let
       mountpoints = [
         { mp = "/srv/storage"; volume = "/srv/storage"; }
       ];
-      nix.modules = [
-        { config.my.services.containers.instrumentation.compose.enable = true; }
-      ];
+      nix.modules = [{
+        config.my.containers = {
+          instrumentation.compose.enable = true;
+          services = {
+            adguardhome-sync.enable = false;
+          };
+        };
+      }];
     };
   };
 in

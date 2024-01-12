@@ -17,9 +17,14 @@ in
       (import ./networking importArgs)
     ];
 
-  options.my.containers.services = {
-    enable = makeEnableOptionDefaultTrue "containerized services";
-    contents = mkOption { default = { }; };
-    out = mkOption { default = mapAttrs (_: service: service.content) cfg.contents; };
-  };
+  options.my.containers.services =
+    let
+      enabledServices = filterAttrs (_: service: service.condition) cfg.contents;
+      rawServices = mapAttrs (_: service: service.content) enabledServices;
+    in
+    {
+      enable = makeEnableOptionDefaultTrue "containerized services";
+      contents = mkOption { default = { }; };
+      out = mkOption { default = rawServices; };
+    };
 }

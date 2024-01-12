@@ -1,4 +1,4 @@
-{ config, lib, utils, ... }:
+{ config, lib, utils, ... }@args:
 
 with lib;
 let
@@ -6,9 +6,12 @@ let
   inherit (utils) makeEnableOptionDefaultTrue makeDefault;
 in
 {
+  imports = [
+    (import ./adguardhome-sync args)
+  ];
+
   options.my.containers.services = {
     actual-server.enable = makeEnableOptionDefaultTrue "actual-server";
-    adguardhome-sync.enable = makeEnableOptionDefaultTrue "adguardhome-sync";
     forgejo.enable = makeEnableOptionDefaultTrue "forgejo";
     homepage.enable = makeEnableOptionDefaultTrue "homepage";
     themepark.enable = makeEnableOptionDefaultTrue "themepark";
@@ -27,12 +30,6 @@ in
         "traefik.http.routers.actual.rule" = "Host(`actual.${config.my.domain}`)";
         "traefik.http.routers.actual.middlewares" = "default@file";
       };
-    });
-
-    adguardhome-sync = mkIf cfg.adguardhome-sync.enable (makeDefault {
-      image = "lscr.io/linuxserver/adguardhome-sync:latest";
-      ports = [ "8082:8082/tcp" ];
-      volumes = [ "${config.my.storage.getConfigPath "adguardhome-sync"}:/config" ];
     });
 
     forgejo-server = mkIf cfg.forgejo.enable (makeDefault {
