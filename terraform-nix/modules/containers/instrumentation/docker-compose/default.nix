@@ -2,7 +2,7 @@
 
 with lib;
 let
-  cfg = config.my.services.containers.instrumentation.compose;
+  cfg = config.my.containers.instrumentation.compose;
 
   user = config.users.users.root;
 
@@ -22,14 +22,14 @@ let
 in
 with lib;
 {
-  options.my.services.containers.instrumentation.compose = {
+  options.my.containers.instrumentation.compose = {
     enable = mkEnableOption "docker compose";
   };
 
   config = mkIf cfg.enable {
     sops = {
-      defaultSopsFile = ../../../../secrets/docker/default.env;
       secrets."docker.env" = {
+        sopsFile = ../../../../secrets/docker/default.env;
         owner = user.name;
         path = "${user.home}/.env";
       };
@@ -63,7 +63,9 @@ with lib;
         cp -r ${composeFile} ${user.home}/compose.yaml
       '');
       docker-compose-up.text = toString (pkgs.writers.writeBash "docker-compose-up" ''
-        cd ${user.home} && ${pkgs.docker}/bin/docker compose up -d
+        cd ${user.home} && ${pkgs.docker}/bin/docker compose up \
+          --detach \
+          --remove-orphans
       '');
     };
 
