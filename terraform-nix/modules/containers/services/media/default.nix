@@ -73,7 +73,6 @@ in
     });
 
     jackett = mkIf cfg.jackett.enable (makeDefault {
-      profiles = [ "disable" ];
       image = "lscr.io/linuxserver/jackett";
       networks = [ "default" "external" ];
       ports = [ "9117:9117" ];
@@ -82,7 +81,6 @@ in
     });
 
     jellyfin = mkIf cfg.jellyfin.enable (makeDefault {
-      profiles = [ "disable" ];
       image = "lscr.io/linuxserver/jellyfin";
       environment = { DOCKER_MODS = "linuxserver/mods:jellyfin-opencl-intel"; };
       networks = [ "default" "external" ];
@@ -159,7 +157,6 @@ in
     });
 
     mylar = mkIf cfg.mylar.enable (makeDefault {
-      profiles = [ "disable" ];
       image = "lscr.io/linuxserver/mylar3:latest";
       ports = [ "8090:8090" ];
       volumes =
@@ -233,7 +230,6 @@ in
     });
 
     readarr = mkIf cfg.readarr.enable (makeDefault {
-      profiles = [ "disable" ];
       image = "lscr.io/linuxserver/readarr:latest";
       ports = [ "8787:8787" ];
       volumes =

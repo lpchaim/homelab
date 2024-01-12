@@ -96,6 +96,10 @@ let
           instrumentation.compose.enable = true;
           services = {
             adguardhome-sync.enable = false;
+            jackett.enable = false;
+            jellyfin.enable = false;
+            mylar.enable = false;
+            readarr.enable = false;
           };
         };
       }];
