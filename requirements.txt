@@ -1,4 +1,4 @@
-ansible-core==2.15.5
+ansible-core==2.15.8
 certifi==2023.7.22
 cffi==1.16.0
 charset-normalizer==3.3.0
