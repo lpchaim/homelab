@@ -69,7 +69,7 @@ with lib;
                 while IFS= read -r line; do
                   export $line
                 done < /run/secrets/${envFile}
-                ${concatStringsSep "\n" (builtins.attrValues (builtins.mapAttrs (name: val: "export ${name}=${val}") extraEnv))}
+                ${concatStringsSep "\n" (builtins.attrValues (builtins.mapAttrs (name: val: "export ${name}=\"${val}\"") extraEnv))}
                 ${concatStringsSep "\n" (makeTemplateLogic filesToTemplate)}
               '') + (lib.optionalString config.my.containers.instrumentation.compose.enable ''
                 ${pkgs.docker}/bin/docker compose --file ~/compose.yaml restart ${name}

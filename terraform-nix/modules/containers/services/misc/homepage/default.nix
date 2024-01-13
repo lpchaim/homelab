@@ -10,9 +10,6 @@ in
 {
   options.my.containers.services.homepage = {
     enable = makeEnableOptionDefaultTrue name;
-    catppuccin = {
-      enable = mkEnableOption name // { default = true; };
-    };
   };
 
   config = mkIf cfg.homepage.enable (mkMerge [

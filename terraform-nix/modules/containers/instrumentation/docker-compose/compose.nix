@@ -1,10 +1,15 @@
-{ config, ... }:
+{ config, lib, ... }:
 
+with lib;
 {
   name = "homelab";
   version = "3.6";
 
-  services = config.my.containers.services.out;
+  services =
+    let
+      enabledServices = filterAttrs (_: service: if service ? _type then service.condition else true) config.my.containers.services.contents;
+      serviceContents = mapAttrs (_: service: if service ? _type then service.content else service) enabledServices;
+    in serviceContents;
 
   networks = {
     default = {
