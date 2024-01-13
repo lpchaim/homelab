@@ -8,13 +8,13 @@ in
 {
   imports = [
     (import ./adguardhome-sync args)
+    (import ./themepark args)
   ];
 
   options.my.containers.services = {
     actual-server.enable = makeEnableOptionDefaultTrue "actual-server";
     forgejo.enable = makeEnableOptionDefaultTrue "forgejo";
     homepage.enable = makeEnableOptionDefaultTrue "homepage";
-    themepark.enable = makeEnableOptionDefaultTrue "themepark";
     vscode.enable = makeEnableOptionDefaultTrue "vscode";
   };
 
@@ -100,19 +100,6 @@ in
         "traefik.http.routers.home.entrypoints" = "websecure";
         "traefik.http.routers.home.rule" = "Host(`home.${config.my.domain}`)";
         "traefik.http.routers.home.middlewares" = "default@file";
-      };
-    });
-
-    themepark = mkIf cfg.themepark.enable (makeDefault {
-      image = "ghcr.io/themepark-dev/theme.park:latest";
-      ports = [ "8084:80" "8444:443" ];
-      volumes = [ "${config.my.storage.getConfigPath "themepark"}:/config" ];
-      labels = {
-        "traefik.enable" = "true";
-        "traefik.http.routers.themepark.entrypoints" = "websecure";
-        "traefik.http.routers.themepark.rule" = "Host(`themepark.${config.my.domain}`)";
-        "traefik.http.routers.themepark.middlewares" = "default@file";
-        "traefik.http.services.themepark.loadbalancer.server.port" = "80";
       };
     });
 

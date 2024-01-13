@@ -2,16 +2,20 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/23.11";
 
+    # Misc
     flake-utils.url = "github:numtide/flake-utils";
-    mmproxy = {
-      flake = false;
-      url = "github:cloudflare/mmproxy";
-    };
+    mmproxy = { url = "github:cloudflare/mmproxy"; flake = false; };
     nixos-generators = {
       url = "github:nix-community/nixos-generators";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    sops-nix.url = "github:Mic92/sops-nix";
+    sops-nix = {
+      url = "github:Mic92/sops-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    # Docker inputs
+    catppuccin-theme-park = { url = "github:catppuccin/theme.park"; flake = false; };
   };
 
   outputs = { self, flake-utils, nixpkgs, nixos-generators, ... }@inputs:

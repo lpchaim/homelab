@@ -27,9 +27,6 @@ in
       assets = makeAssetsDerivation name ./assets;
       envPath = ../../../../../secrets/docker/default.env;
       filesToTemplate = [ "adguardhome-sync.yaml" ];
-      postExec = optionalString config.my.containers.instrumentation.compose.enable ''
-        docker compose --file ~/compose.yaml restart ${name}
-      '';
     })
   ]);
 }
