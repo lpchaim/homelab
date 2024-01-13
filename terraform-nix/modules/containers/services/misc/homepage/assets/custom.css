@@ -1,0 +1,8 @@
+[id*=inlinewidget] > .service-card {
+	display: flex;
+}
+
+[id*=inlinewidget] > .service-card > .service-title {
+	width: 50%;
+	display: inline-flex;
+}

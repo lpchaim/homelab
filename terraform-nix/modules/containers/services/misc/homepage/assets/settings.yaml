@@ -1,0 +1,25 @@
+---
+# For configuration options and examples, please see:
+# https://gethomepage.dev/latest/configs/settings
+
+headerStyle: clean
+quickLaunch:
+  searchDescriptions: true
+  hideInternetSearch: true
+  hideVisitURL: true
+statusStyle: dot
+language: en
+layout:
+  Main:
+    style: row
+    columns: 4
+    header: false
+  Media:
+    style: row
+    columns: 4
+  Other:
+    style: row
+    columns: 4
+  Health Checks:
+    style: row
+    columns: 6

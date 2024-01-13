@@ -8,13 +8,13 @@ in
 {
   imports = [
     (import ./adguardhome-sync args)
+    (import ./homepage args)
     (import ./themepark args)
   ];
 
   options.my.containers.services = {
     actual-server.enable = makeEnableOptionDefaultTrue "actual-server";
     forgejo.enable = makeEnableOptionDefaultTrue "forgejo";
-    homepage.enable = makeEnableOptionDefaultTrue "homepage";
     vscode.enable = makeEnableOptionDefaultTrue "vscode";
   };
 
@@ -83,23 +83,6 @@ in
       volumes = [ "${config.my.storage.getDataPath "forgejo-postgres"}:/var/lib/postgresql/data" ];
       labels = {
         "com.centurylinklabs.watchtower.enable" = "false";
-      };
-    });
-
-    homepage = mkIf cfg.homepage.enable (makeDefault {
-      image = "ghcr.io/gethomepage/homepage:latest";
-      networks = [ "default" "external" ];
-      ports = [ "3000:3000" ];
-      volumes = [
-        "${config.my.storage.getConfigPath "homepage"}:/app/config"
-        "${config.my.storage.main}:/storage:ro"
-        "/var/run/docker.sock:/var/run/docker.sock"
-      ];
-      labels = {
-        "traefik.enable" = "true";
-        "traefik.http.routers.home.entrypoints" = "websecure";
-        "traefik.http.routers.home.rule" = "Host(`home.${config.my.domain}`)";
-        "traefik.http.routers.home.middlewares" = "default@file";
       };
     });
 

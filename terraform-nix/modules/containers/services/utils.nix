@@ -22,7 +22,7 @@ with lib;
   makeAssetsDerivation = name: path: pkgs.stdenvNoCC.mkDerivation {
     name = "${name}-assets";
     src = path;
-    phases = [ "unpackPhase" "installPhase" ];
+    phases = [ "installPhase" ];
     installPhase = ''
       mkdir -p $out
       cp -r $src/* $out/
@@ -37,8 +37,8 @@ with lib;
     , assets
     , filesToTemplate ? [ ]
     , envPath ? null
+    , extraEnv ? {}
     , envFile ? "docker.env"
-    , postExec ? ""
     }:
     let
       configDir = "/run/${name}";
@@ -69,10 +69,11 @@ with lib;
                 while IFS= read -r line; do
                   export $line
                 done < /run/secrets/${envFile}
+                ${concatStringsSep "\n" (builtins.attrValues (builtins.mapAttrs (name: val: "export ${name}=${val}") extraEnv))}
                 ${concatStringsSep "\n" (makeTemplateLogic filesToTemplate)}
-              '') + ''
-                ${postExec}
-              '');
+              '') + (lib.optionalString config.my.containers.instrumentation.compose.enable ''
+                ${pkgs.docker}/bin/docker compose --file ~/compose.yaml restart ${name}
+              ''));
           };
         };
       };
