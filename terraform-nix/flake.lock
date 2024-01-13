@@ -1,5 +1,21 @@
 {
   "nodes": {
+    "catppuccin-theme-park": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1702845443,
+        "narHash": "sha256-6C4awzW7b5TG26lnJTKMlZfMmwmbJQiEKhy6i76kiUk=",
+        "owner": "catppuccin",
+        "repo": "theme.park",
+        "rev": "5d462d10fef50feb3f6cae447d64e55826cb52df",
+        "type": "github"
+      },
+      "original": {
+        "owner": "catppuccin",
+        "repo": "theme.park",
+        "type": "github"
+      }
+    },
     "flake-utils": {
       "inputs": {
         "systems": "systems"
@@ -102,24 +118,9 @@
         "type": "github"
       }
     },
-    "nixpkgs_2": {
-      "locked": {
-        "lastModified": 1703499205,
-        "narHash": "sha256-lF9rK5mSUfIZJgZxC3ge40tp1gmyyOXZ+lRY3P8bfbg=",
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "e1fa12d4f6c6fe19ccb59cac54b5b3f25e160870",
-        "type": "github"
-      },
-      "original": {
-        "owner": "NixOS",
-        "ref": "nixpkgs-unstable",
-        "repo": "nixpkgs",
-        "type": "github"
-      }
-    },
     "root": {
       "inputs": {
+        "catppuccin-theme-park": "catppuccin-theme-park",
         "flake-utils": "flake-utils",
         "mmproxy": "mmproxy",
         "nixos-generators": "nixos-generators",
@@ -129,7 +130,9 @@
     },
     "sops-nix": {
       "inputs": {
-        "nixpkgs": "nixpkgs_2",
+        "nixpkgs": [
+          "nixpkgs"
+        ],
         "nixpkgs-stable": "nixpkgs-stable"
       },
       "locked": {

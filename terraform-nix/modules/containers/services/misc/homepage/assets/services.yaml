@@ -1,0 +1,98 @@
+---
+# For configuration options and examples, please see:
+# https://gethomepage.dev/latest/configs/services
+
+- Main:
+    - Jellyfin:
+        href: https://jellyfin.$domain
+        ping: https://jellyfin.$domain
+        icon: jellyfin.svg
+        description: Media server
+        weight: -990000
+        widget:
+            type: jellyfin
+            url: https://jellyfin.$domain
+            key: $secret_jellyfin_api_key
+            enableNowPlaying: true
+    - Home Assistant:
+        href: https://hass.$domain
+        ping: https://hass.$domain
+        icon: home-assistant.svg
+        description: Home automation
+        weight: -980000
+        widget:
+            type: homeassistant
+            url: https://hass.$domain
+            key: $secret_homeassistant_token
+    - Nextcloud:
+        href: https://nextcloud.$domain
+        ping: https://nextcloud.$domain
+        icon: nextcloud.svg
+        description: Personal cloud
+        weight: -970000
+        widget:
+            type: nextcloud
+            url: https://nextcloud.$domain
+            key: $secret_nextcloud_serverinfo_token
+            fields:
+                - activeusers
+                - numfiles
+                - numshares
+    - Proxmox:
+        href: https://pve01.$domain
+        ping: https://pve01.$domain
+        icon: proxmox.svg
+        description: Virtualization platform
+        weight: -960000
+        widget:
+            type: proxmox
+            url: https://10.10.0.1:8006
+            username: $secret_proxmox_user_ro
+            password: $secret_proxmox_password_ro
+
+- Health Checks:
+    - SnapRAID Sync:
+        href: https://healthchecks.io/checks/$secret_healthcheck_io_uuid_snapraid_sync/details/
+        icon: healthchecks.svg
+        description: Syncs new data to SnapRAID array
+        widget:
+            type: healthchecks
+            url: https://healthchecks.io
+            key: $secret_healthcheck_api_key_ro
+            uuid: $secret_healthcheck_io_uuid_snapraid_sync
+    - SnapRAID Scrub:
+        href: https://healthchecks.io/checks/$secret_healthcheck_io_uuid_snapraid_scrub/details/
+        icon: healthchecks.svg
+        description: Checks SnapRAID array for errors
+        widget:
+            type: healthchecks
+            url: https://healthchecks.io
+            key: $secret_healthcheck_api_key_ro
+            uuid: $secret_healthcheck_io_uuid_snapraid_scrub
+    - Borg Backup Main:
+        href: https://healthchecks.io/checks/$secret_healthcheck_io_uuid_borg_main/details/
+        icon: healthchecks.svg
+        description: Backs up PVE data
+        widget:
+            type: healthchecks
+            url: https://healthchecks.io
+            key: $secret_healthcheck_api_key_ro
+            uuid: $secret_healthcheck_io_uuid_borg_main
+    - Borg Backup App Data:
+        href: https://healthchecks.io/checks/$secret_healthcheck_io_uuid_borg_appdata/details/
+        icon: healthchecks.svg
+        description: Backs up application data
+        widget:
+            type: healthchecks
+            url: https://healthchecks.io
+            key: $secret_healthcheck_api_key_ro
+            uuid: $secret_healthcheck_io_uuid_borg_appdata
+    - Borg Backup Personal:
+        href: https://healthchecks.io/checks/$secret_healthcheck_io_uuid_borg_personal/details/
+        icon: healthchecks.svg
+        description: Backs up personal data
+        widget:
+            type: healthchecks
+            url: https://healthchecks.io
+            key: $secret_healthcheck_api_key_ro
+            uuid: $secret_healthcheck_io_uuid_borg_personal

@@ -1,5 +1,7 @@
 {
   imports = [
-    ./docker
+    ./backends
+    ./instrumentation
+    ./services
   ];
 }

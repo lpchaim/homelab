@@ -1,0 +1,10 @@
+---
+# For configuration options and examples, please see:
+# https://gethomepage.dev/latest/configs/widgets
+
+- resources:
+    cpu: true
+    memory: true
+    disk: /storage
+    cputemp: true
+    uptime: true

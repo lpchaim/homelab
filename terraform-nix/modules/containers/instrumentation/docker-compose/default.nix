@@ -1,18 +1,12 @@
-# Documentation: https://nixos.wiki/wiki/Docker
-
 { config, lib, pkgs, ... }@args:
 
 with lib;
 let
-  cfg = config.my.services.docker;
+  cfg = config.my.containers.instrumentation.compose;
 
-  ports = {
-    internal.http = 8099;
-    internal.https = 44399;
-  };
   user = config.users.users.root;
 
-  composeNix = import ./compose (args // { inherit ports; });
+  composeNix = import ./compose.nix args;
   composeFile = pkgs.runCommand "compose-nix-to-yaml"
     {
       buildInputs = [ pkgs.remarshal ];
@@ -28,14 +22,14 @@ let
 in
 with lib;
 {
-  options.my.services.docker = {
-    enable = mkEnableOption "docker";
+  options.my.containers.instrumentation.compose = {
+    enable = mkEnableOption "docker compose";
   };
 
   config = mkIf cfg.enable {
     sops = {
-      defaultSopsFile = ../../../secrets/docker/default.env;
       secrets."docker.env" = {
+        sopsFile = ../../../../secrets/docker/default.env;
         owner = user.name;
         path = "${user.home}/.env";
       };
@@ -64,24 +58,14 @@ with lib;
         allowedUDPPorts = sanitizePorts rawUdpPorts;
       };
 
-    virtualisation.docker = {
-      enable = true;
-      autoPrune = {
-        enable = true;
-        flags = [ "--all" "--force" ];
-        dates = "weekly";
-      };
-    };
-
     system.activationScripts = {
       docker-compose-cp.text = toString (pkgs.writers.writeBash "docker-compose-cp" ''
         cp -r ${composeFile} ${user.home}/compose.yaml
       '');
-      docker-socket-perms.text = toString (pkgs.writers.writeBash "docker-socket-perms" ''
-        chmod o+rw /var/run/docker.sock
-      '');
       docker-compose-up.text = toString (pkgs.writers.writeBash "docker-compose-up" ''
-        cd ${user.home} && ${pkgs.docker}/bin/docker compose up -d
+        cd ${user.home} && ${pkgs.docker}/bin/docker compose up \
+          --detach \
+          --remove-orphans
       '');
     };
 
@@ -106,8 +90,8 @@ with lib;
         };
       in
       {
-        "6to4-http" = make6to4Service 80 ports.internal.http;
-        "6to4-https" = make6to4Service 443 ports.internal.https;
+        "6to4-http" = make6to4Service 80 config.my.networking.ports.internal.http;
+        "6to4-https" = make6to4Service 443 config.my.networking.ports.internal.https;
       };
 
     users.users.socat = {
