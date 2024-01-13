@@ -27,52 +27,94 @@ provider "proxmox" {
   }
 }
 
-resource "proxmox_lxc" "nixos-caddy" {
-  vmid   = "241"
-  tags   = "nixos,caddy"
-  memory = var.default_mem
-  cores  = 4
+locals {
+  lxcs = {
+    for vmid, lxc in var.lxcs : vmid => merge(lxc, {
+      flake = coalesce(lxc.flake, lxc.name)
+    }) if lxc.enable
+  }
+}
 
-  hostname = "nixos-caddy"
+resource "proxmox_lxc" "nixos" {
+  for_each = local.lxcs
+
+  vmid         = each.key
+  tags         = join(";", sort(concat(["nixos", "terraform"], each.value.tags)))
+  start        = true
+  onboot       = each.value.onboot
+  unprivileged = !each.value.privileged
+
+  cores  = each.value.cores
+  memory = each.value.memory
+  swap   = each.value.swap
+
+  rootfs {
+    storage = "local-lvm"
+    size    = each.value.rootfs_size
+  }
+  dynamic "mountpoint" {
+    for_each = each.value.mountpoints
+    content {
+      slot    = coalesce(mountpoint.value["slot"], mountpoint.key)
+      mp      = mountpoint.value["mp"]
+      storage = mountpoint.value["storage"]
+      volume  = mountpoint.value["volume"]
+      key     = mountpoint.value["key"]
+      size    = mountpoint.value["size"]
+    }
+  }
+
+  hostname = each.value.name
   network {
     name   = "eth0"
-    bridge  = "vmbr0"
-    ip      = "10.10.2.41/${var.network_subnet}"
-    ip6     = "dhcp"
-    gw = var.network_gateway
+    bridge = "vmbr0"
+    ip     = "${each.value.ip}/${var.network_subnet}"
+    gw     = var.network_gateway
   }
 
   target_node     = var.pm_node_name
   ostemplate      = var.pm_lxc_template
   ssh_public_keys = var.authorized_keys
-  start           = true
   cmode           = "console"
 
   features {
     nesting = true
   }
-  lifecycle {
-    ignore_changes = [
-      rootfs
-    ]
+
+  connection {
+    type        = "ssh"
+    user        = var.pm_user
+    host        = var.pm_host
+    private_key = file("~/.ssh/id_rsa")
+  }
+
+  provisioner "remote-exec" {
+    inline = length(each.value.extra_config) > 0 ? concat(
+      [for line in each.value.extra_config : "echo '${line}' >> /etc/pve/lxc/${each.key}.conf"],
+      [
+        "awk -i inplace '!a[$0]++' /etc/pve/lxc/${each.key}.conf", # Removes duplicate lines, just in case
+        "pct reboot ${each.key}"
+      ]
+    ) : [":"]
   }
 }
 
 module "nixos" {
+  for_each = { for key, val in local.lxcs : key => val if var.build }
+
   source = "github.com/Gabriella439/terraform-nixos-ng/nixos"
 
-  host = "root@10.10.2.41"
+  host  = "${each.value.user}@${each.value.ip}"
+  flake = ".#${each.value.flake}"
 
-  flake = ".#caddy"
-
-  arguments = [
+  arguments = each.value.remotebuild ? [
     # You can build on another machine, including the target machine, by
     # enabling this option, but if you build on the target machine then make
     # sure that the firewall and security group permit outbound connections.
-    # "--build-host", "root@${var.caddy_ip}",
-  ]
+    "--build-host", "${each.value.user}@${each.value.ip}",
+  ] : []
 
   ssh_options = "-o StrictHostKeyChecking=accept-new"
 
-  depends_on = [proxmox_lxc.nixos-caddy]
+  depends_on = [proxmox_lxc.nixos]
 }

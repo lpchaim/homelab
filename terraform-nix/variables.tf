@@ -9,6 +9,12 @@ variable "pm_host" {
   type        = string
 }
 
+variable "pm_user" {
+  description = "PVE node user"
+  type        = string
+  default     = "root"
+}
+
 variable "pm_node_name" {
   description = "Name of the proxmox node to create the VMs on"
   type        = string
@@ -35,7 +41,36 @@ variable "authorized_keys" {
   type        = string
 }
 
-variable "default_mem" {
-  description = "Number of server nodes to provision"
-  type        = string
+variable "lxcs" {
+  description = "List of maps describing LXC containers"
+  type = map(object({
+    name        = string
+    ip          = string
+    enable      = optional(bool, true)
+    remotebuild = optional(bool, false)
+    onboot      = optional(bool, true)
+    rootfs_size = optional(string, "8G")
+    privileged  = optional(bool, false)
+    user        = optional(string, "root")
+    flake       = optional(string, null)
+    tags        = optional(list(string), [])
+    memory      = optional(number, 1024)
+    swap        = optional(number, 0)
+    cores       = optional(number, 6)
+    mountpoints = optional(list(object({
+      mp      = string
+      volume  = string
+      slot    = optional(number)
+      key     = optional(string, "")
+      storage = optional(string, "")
+      size    = optional(string, "0T")
+    })), [])
+    extra_config = optional(list(string), [])
+  }))
+}
+
+variable "build" {
+  description = "Whether to build the NixOS configurations"
+  type = bool
+  default = false
 }

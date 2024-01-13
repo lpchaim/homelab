@@ -1,58 +1,165 @@
 {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/23.05";
-    nixpkgs-unstable.url = "nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs/23.11";
+
+    # Misc
     flake-utils.url = "github:numtide/flake-utils";
+    mmproxy = { url = "github:cloudflare/mmproxy"; flake = false; };
     nixos-generators = {
       url = "github:nix-community/nixos-generators";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    sops-nix = {
+      url = "github:Mic92/sops-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    # Docker inputs
+    catppuccin-theme-park = { url = "github:catppuccin/theme.park"; flake = false; };
   };
 
-  outputs = { self, flake-utils, nixpkgs, nixpkgs-unstable, nixos-generators, ... }@inputs:
+  outputs = { self, flake-utils, nixpkgs, nixos-generators, ... }@inputs:
     flake-utils.lib.eachDefaultSystem (system:
       let
-        commonPkgConfig = {
+        makePkgs = nixpkgs:
+          import nixpkgs {
+            inherit system;
+            config = {
+              allowUnfree = true;
+              allowUnfreePredicate = _: true;
+            };
+            overlays = import ./overlays { inherit inputs pkgs; };
+          };
+        pkgs = makePkgs nixpkgs;
+
+        makeCommonConfig = { modules ? [ ], pkgs ? pkgs }: {
           inherit system;
-          config.allowUnfree = true;
+          modules = [
+            { system.stateVersion = "23.11"; }
+            inputs.sops-nix.nixosModules.sops
+            ./modules
+          ] ++ modules;
+          specialArgs = { inherit inputs pkgs system; };
         };
-        pkgsUnstable = import nixpkgs-unstable commonPkgConfig;
-        pkgs = import nixpkgs-unstable commonPkgConfig;
-        makeProxmoxLxc = modules:
-          nixpkgs.lib.nixosSystem {
-            inherit system;
-            modules = [
-              nixos-generators.nixosModules.proxmox-lxc
-              ./modules/base.nix
-            ] ++ modules;
-          };
-      in {
-        packages = rec {
-          default = base-proxmox-lxc;
-          base-proxmox-lxc = nixos-generators.nixosGenerate {
-            inherit system;
-            modules = [ ./modules/base.nix ];
+        makeProxmoxLxcConfig = { modules ? [ ], pkgs ? pkgs, generator ? nixpkgs.lib.nixosSystem }:
+          generator (
+            makeCommonConfig {
+              inherit pkgs;
+              modules = (modules ++ [
+                { my.platforms.proxmox-lxc.enable = true; }
+                nixos-generators.nixosModules.proxmox-lxc
+              ]);
+            }
+          );
+        makeProxmoxLxcTarball = { pkgs, modules ? [ ] }:
+          nixos-generators.nixosGenerate ({
             format = "proxmox-lxc";
-            pkgs = nixpkgs.${system};
-            lib = nixpkgs.legacyPackages.${system}.lib;
-          };
-          nixosConfigurations = rec {
-            default = caddy;
-            caddy = makeProxmoxLxc [ ./modules/caddy.nix ];
-          };
+            inherit (pkgs) lib;
+          } // makeCommonConfig {
+            inherit pkgs;
+            modules = modules;
+          });
+
+        lxcs = import ./lxcs { inherit (pkgs) lib; };
+      in
+      with pkgs.lib;
+      rec {
+        nixosConfigurations = mapAttrs
+          (_: lxc: makeProxmoxLxcConfig {
+            inherit pkgs;
+            modules = lxc.nix.modules or [ ];
+          })
+          lxcs.byName;
+
+        packages = rec {
+          default = lxc-base;
+          lxc-base = makeProxmoxLxcTarball { inherit pkgs; };
+        }
+        // mapAttrs'
+          (name: lxc: nameValuePair
+            "lxc-${name}"
+            (makeProxmoxLxcTarball {
+              inherit pkgs;
+              modules = lxc.nix.modules or [ ];
+            })
+          )
+          lxcs.byName
+        // mapAttrs'
+          (vmid: lxc: nameValuePair
+            "lxc-${vmid}"
+            (makeProxmoxLxcTarball {
+              inherit pkgs;
+              modules = lxc.nix.modules or [ ];
+            })
+          )
+          lxcs.byId;
+        legacyPackages.nixosConfigurations = nixosConfigurations; # Workaround for the Terraform provider
+
+        apps =
+          let
+            makeTfVarsPackage = tfVars: pkgs.runCommand "terraform-vars" { } ''
+              echo '${builtins.toJSON tfVars}' | ${pkgs.jq}/bin/jq > $out
+            '';
+            makeGenerateTfVars = name: package:
+              let tfVarsFile = "${name}.auto.tfvars.json";
+              in
+              {
+                type = "app";
+                program = toString (pkgs.writers.writeBash "package-${package.name}" ''
+                  if [[ -e ${tfVarsFile} ]]; then rm -f ${tfVarsFile}; fi
+                  cp ${package} ${tfVarsFile}
+                '');
+              };
+            enableBuild = makeGenerateTfVars "nix-build" (makeTfVarsPackage { build = true; });
+            disableBuild = makeGenerateTfVars "nix-build" (makeTfVarsPackage { build = false; });
+            generateTerraformVars = makeGenerateTfVars "nix-lxcs" (makeTfVarsPackage { lxcs = lxcs.byId; });
+          in
+          {
+            default = self.apps.${system}.deploy;
+            deploy = {
+              type = "app";
+              program = toString (pkgs.writers.writeBash "deploy" ''
+                ${enableBuild.program}
+                ${generateTerraformVars.program}
+                ${pkgs.terraform}/bin/terraform apply
+              '');
+            };
+            ageFromSsh = {
+              type = "app";
+              program = toString (pkgs.writers.writeBash "ageFromSsh" ''
+                (ssh-keyscan "$1" | ${pkgs.ssh-to-age}/bin/ssh-to-age) 2>/dev/null
+              '');
+            };
+            buildOsConfig = {
+              type = "app";
+              program = toString (pkgs.writers.writeBash "buildosconfig" ''
+                nix build ".#nixosConfigurations.${system}.$1.config.system.build.toplevel" --show-trace
+              '');
+            };
+          } // genAttrs [ "init" "plan" "apply" "destroy" ] (cmd: {
+            type = "app";
+            program = toString (pkgs.writers.writeBash cmd ''
+              ${disableBuild.program}
+              ${generateTerraformVars.program}
+              ${pkgs.terraform}/bin/terraform ${cmd}
+            '');
+          });
+
+        devShells.default = with pkgs; mkShell {
+          buildInputs = [
+            age
+            (terraform.withPlugins (b: with b; [
+              external
+              local
+              b.null
+              proxmox
+            ]))
+            nil
+            nixd
+            nixpkgs-fmt
+            rnix-lsp
+            sops
+          ];
         };
-        devShells.default =
-          with pkgsUnstable;
-          mkShell {
-            buildInputs = [
-              (terraform.withPlugins (b: with b; [
-                external
-                local
-                b.null
-                proxmox
-              ]))
-            ];
-          };
-      }
-    );
+      });
 }
