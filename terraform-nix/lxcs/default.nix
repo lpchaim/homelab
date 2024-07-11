@@ -98,7 +98,9 @@ let
             adguardhome-sync.enable = false;
             jackett.enable = false;
             jellyfin.enable = false;
+            lazylibrarian.enable = false;
             mylar.enable = false;
+            portainer.enable = false;
             readarr.enable = false;
           };
         };

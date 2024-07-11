@@ -15,6 +15,7 @@ in
   options.my.containers.services = {
     actual-server.enable = makeEnableOptionDefaultTrue "actual-server";
     forgejo.enable = makeEnableOptionDefaultTrue "forgejo";
+    freshrss.enable = makeEnableOptionDefaultTrue "freshrss";
     vscode.enable = makeEnableOptionDefaultTrue "vscode";
   };
 
@@ -81,6 +82,53 @@ in
       };
       networks = [ "default" ];
       volumes = [ "${config.my.storage.getDataPath "forgejo-postgres"}:/var/lib/postgresql/data" ];
+      labels = {
+        "com.centurylinklabs.watchtower.enable" = "false";
+      };
+    });
+
+    freshrss = mkIf cfg.freshrss.enable (makeDefault {
+      image = "lscr.io/linuxserver/freshrss:latest";
+      networks = [ "default" "external" ];
+      ports = [ "8082:80" ];
+      volumes = [ "${config.my.storage.getConfigPath "freshrss"}:/config" ];
+      environment = {
+        FRESHRSS_INSTALL = builtins.concatStringsSep " " [
+          "--api_enabled"
+          "--base_url https://rss.${config.my.domain}"
+          "--db-base "
+          "--db-host freshrss-postgresql"
+          "--db-password \${secret_freshrss_db_password}"
+          "--db-type pgsql"
+          "--db-user freshrss"
+          "--default_user lpchaim"
+          "--language en"
+        ];
+        CRON_MIN = "*/30";
+      };
+      labels = {
+        "homepage.group" = "Other";
+        "homepage.name" = "Fresh RSS";
+        "homepage.icon" = "freshrss.svg";
+        "homepage.href" = "https://rss.${config.my.domain}";
+        "homepage.description" = "RSS feed reader";
+        "traefik.enable" = "true";
+        "traefik.http.routers.freshrss.entrypoints" = "websecure";
+        "traefik.http.routers.freshrss.rule" = "Host(`rss.${config.my.domain}`)";
+        "traefik.http.routers.freshrss.middlewares" = "default@file";
+      };
+      depends_on = [ "freshrss-postgresql" ];
+    });
+
+    freshrss-postgresql = mkIf cfg.freshrss.enable (makeDefault {
+      image = "postgres:14";
+      environment = {
+        POSTGRES_USER = "freshrss";
+        POSTGRES_PASSWORD = "\${secret_freshrss_db_password}";
+        POSTGRES_DB = "freshrss";
+      };
+      networks = [ "default" ];
+      volumes = [ "${config.my.storage.getDataPath "freshrss-postgresql"}:/var/lib/postgresql/data" ];
       labels = {
         "com.centurylinklabs.watchtower.enable" = "false";
       };
