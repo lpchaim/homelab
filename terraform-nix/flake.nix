@@ -1,9 +1,15 @@
 {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/23.11";
+    nixpkgs.follows = "unstable";
+    stable.url = "github:NixOS/nixpkgs/23.11";
+    unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
 
     # Misc
     flake-utils.url = "github:numtide/flake-utils";
+    home-manager = {
+      url = "github:nix-community/home-manager";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     mmproxy = { url = "github:cloudflare/mmproxy"; flake = false; };
     nixos-generators = {
       url = "github:nix-community/nixos-generators";
@@ -36,6 +42,7 @@
           inherit system;
           modules = [
             { system.stateVersion = "23.11"; }
+            inputs.home-manager.nixosModules.home-manager
             inputs.sops-nix.nixosModules.sops
             ./modules
           ] ++ modules;
@@ -157,7 +164,6 @@
             nil
             nixd
             nixpkgs-fmt
-            rnix-lsp
             sops
           ];
         };

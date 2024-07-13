@@ -1,6 +1,6 @@
 keys:
   - &primary age10fa7ce7w6q0ppk5l2gvg6d02g9cmj26rpt00ct54d4latqsnwajs90a43h
-  - &docker age1q256fq2ef0qm7a9yvp80ttnmk0xuusuwtduvrp7x7d6pz63lnqssjw3473
+  - &docker age1cshhu59c59e4twyucqnfsazfav32gnc72u59umkcnh5hyqn9jd7qy254pc
   - &traefik age1k53pxzjtln8ds72ys5crlqz48q3flr8kawjhfmu34w4306mahscqgdamrx
 creation_rules:
   - path_regex: secrets/[^/]+\.(yaml|json|env|ini)$

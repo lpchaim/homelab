@@ -51,6 +51,7 @@ in
         FORGEJO__mailer__SMTP_PORT = "\${secret_smtp_port}";
         FORGEJO__mailer__USER = "\${secret_smtp_user}";
         FORGEJO__mailer__PASSWD = "\${secret_smtp_password}";
+        FORGEJO__server__SSH_PORT = "222";
         FORGEJO__service__DISABLE_REGISTRATION = "true";
         FORGEJO__service__REGISTER_MANUAL_CONFIRM = "true";
       };

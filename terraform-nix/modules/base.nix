@@ -29,7 +29,7 @@ with lib;
       keep-outputs = true;
     };
     gc = {
-      automatic = true;
+      automatic = false;
       dates = "daily";
     };
   };
@@ -44,4 +44,8 @@ with lib;
   i18n.defaultLocale = "en_US.UTF-8";
   console.useXkbConfig = true;
   services.xserver.xkb.layout = "br";
+
+  # Home Manager
+  home-manager.useGlobalPkgs = true;
+  home-manager.useUserPackages = true;
 }

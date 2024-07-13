@@ -32,6 +32,17 @@ let
   };
 
   byId = {
+    "210" = makeDefault rec {
+      name = "homeassistant";
+      ip = "10.10.2.10";
+      services = [ "http://${ip}:8123" ];
+      tags = [ "home" "automation" ];
+      cores = 4;
+      memory = 2048;
+      mountpoints = [
+        { mp = "/var/lib/hass"; volume = config.my.storage.getConfigPath "homeassistant"; }
+      ];
+    };
     "241" = makeDefault {
       name = "caddy";
       enable = false;
@@ -60,6 +71,7 @@ let
       tags = [ "media" ];
       memory = 4096;
       cores = 6;
+      rootfs_size = "20G";
       extra_config = [
         "lxc.cgroup2.devices.allow: c 226:0 rwm"
         "lxc.cgroup2.devices.allow: c 226:128 rwm"
@@ -85,7 +97,8 @@ let
       privileged = true;
       ip = "10.10.10.0";
       tags = [ "docker" ];
-      memory = 4096;
+      memory = 6144;
+      swap = 1024;
       cores = 6;
       rootfs_size = "30G";
       mountpoints = [
